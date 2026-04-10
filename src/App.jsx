@@ -21,7 +21,7 @@ import {
 import {
     Calendar, BookOpen, PenSquare, Home, Award, ChevronRight,
     CheckCircle2, MapPin, Search, Video, PlayCircle, Users,
-    Activity, Ticket, Menu, X, Settings, LogOut, Edit3, Clock, Flame, Target, TrendingUp, Car, AlertCircle, Plus, MessageSquare, Sticker, Smile, Wind, History, Trophy, Footprints, Hand, ShieldCheck, Zap, ChevronDown, Loader2, Mail, Lock, Trash2, CalendarDays, Edit
+    Activity, Ticket, Menu, X, Settings, LogOut, Edit3, Clock, Flame, Target, TrendingUp, Car, AlertCircle, Plus, MessageSquare, Sticker, Smile, Wind, History, Trophy, Footprints, Hand, ShieldCheck, Zap, ChevronDown, Loader2, Mail, Lock, Trash2, CalendarDays, Edit, Wallet, Receipt, PieChart, Coins
 } from 'lucide-react';
 
 // --- [Firebase 설정] ---
@@ -108,6 +108,7 @@ export default function App() {
     const [parkingInfo, setParkingInfo] = useState({});
     const [attendanceHistory, setAttendanceHistory] = useState({});
     const [questHistory, setQuestHistory] = useState({});
+    const [expenses, setExpenses] = useState([]); // [추가됨] 가계부 데이터
 
     useEffect(() => {
         if (!auth) { setLoading(false); return; }
@@ -159,7 +160,6 @@ export default function App() {
 
         const unsubSessions = onSnapshot(collection(db, ...userPath, 'sessions'), (snapshot) => {
             const s = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-            // 작성순서(시간) 기반으로 내림차순 정렬 (최신이 맨 위)
             setSessions(s.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)));
         });
 
@@ -177,7 +177,14 @@ export default function App() {
             setQuestHistory(docSnap.data() || {});
         });
 
-        return () => { unsubAttendance(); unsubPasses(); unsubQuests(); unsubMoves(); unsubSessions(); unsubGear(); unsubParking(); unsubHistory(); unsubQuestHistory(); };
+        // [추가됨] 가계부 데이터 동기화
+        const unsubExpenses = onSnapshot(collection(db, ...userPath, 'expenses'), (snapshot) => {
+            const exp = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+            // 날짜순 내림차순(최신순) 정렬
+            setExpenses(exp.sort((a, b) => b.date.localeCompare(a.date) || (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)));
+        });
+
+        return () => { unsubAttendance(); unsubPasses(); unsubQuests(); unsubMoves(); unsubSessions(); unsubGear(); unsubParking(); unsubHistory(); unsubQuestHistory(); unsubExpenses(); };
     }, [user]);
 
     const uniqueBrands = useMemo(() => {
@@ -205,7 +212,7 @@ export default function App() {
     if (!user) return <AuthScreen />;
 
     return (
-        <div className="flex flex-col h-screen bg-gray-50 text-gray-800 font-sans max-w-md mx-auto shadow-lg relative overflow-hidden text-left">
+        <div className="flex flex-col h-screen bg-gray-50 text-gray-800 font-sans max-w-md mx-auto border shadow-lg relative overflow-hidden text-left">
 
             {/* Sidebar Menu */}
             <div className={`fixed inset-0 z-50 transition-all duration-300 ${isMenuOpen ? 'visible' : 'invisible'}`}>
@@ -215,6 +222,7 @@ export default function App() {
                         <h2 className="text-xl font-black text-blue-600 border-b pb-4 mb-8 uppercase flex items-center gap-2"><Award /> Climb Log</h2>
                         <nav className="space-y-1 font-semibold flex-1 text-sm">
                             <button onClick={() => { setActiveTab('home'); setIsMenuOpen(false); }} className={`w-full flex items-center gap-3 p-3 rounded-xl ${activeTab === 'home' ? 'bg-blue-50 text-blue-600 font-bold' : 'text-gray-600'}`}><Home className="w-5 h-5" /> 대시보드</button>
+                            <button onClick={() => { setActiveTab('expenses'); setIsMenuOpen(false); }} className={`w-full flex items-center gap-3 p-3 rounded-xl ${activeTab === 'expenses' ? 'bg-blue-50 text-blue-600 font-bold' : 'text-gray-600'}`}><Wallet className="w-5 h-5" /> 클라이밍 가계부</button>
                             <button onClick={() => { setActiveTab('passes'); setIsMenuOpen(false); }} className={`w-full flex items-center gap-3 p-3 rounded-xl ${activeTab === 'passes' ? 'bg-blue-50 text-blue-600 font-bold' : 'text-gray-600'}`}><Ticket className="w-5 h-5" /> 이용권 & 주차 관리</button>
 
                             <button onClick={() => { setActiveTab('history'); setIsMenuOpen(false); }} className={`w-full flex items-center gap-3 p-3 rounded-xl ${activeTab === 'history' ? 'bg-blue-50 text-blue-600 font-bold' : 'text-gray-600'}`}><History className="w-5 h-5" /> 출석 기록</button>
@@ -231,13 +239,14 @@ export default function App() {
             <header className="bg-white p-4 shadow-sm z-10 flex justify-between items-center border-b border-gray-100">
                 <button onClick={() => setIsMenuOpen(true)} className="p-2 hover:bg-gray-100 rounded-xl transition-colors"><Menu className="w-6 h-6 text-gray-600" /></button>
                 <h1 className="text-lg font-bold uppercase tracking-widest text-gray-800">
-                    {activeTab === 'home' ? 'Dashboard' : activeTab === 'record' ? 'Training' : activeTab === 'passes' ? 'Tickets' : activeTab === 'history' ? 'History' : activeTab === 'questHistory' ? 'Quests' : 'Moves'}
+                    {activeTab === 'home' ? 'Dashboard' : activeTab === 'record' ? 'Training' : activeTab === 'passes' ? 'Tickets' : activeTab === 'history' ? 'History' : activeTab === 'questHistory' ? 'Quests' : activeTab === 'expenses' ? 'Wallet' : 'Moves'}
                 </h1>
                 <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-xs uppercase shadow-inner">{user.email?.charAt(0)}</div>
             </header>
 
             <main className="flex-1 overflow-y-auto p-4 pb-24 bg-[#F8FAFC]">
                 {activeTab === 'home' && <HomeView user={user} attendanceDays={attendanceDays} passes={passes} shoeUses={shoeUses} quests={quests} attendanceHistory={attendanceHistory} questHistory={questHistory} uniqueGyms={uniqueGyms} />}
+                {activeTab === 'expenses' && <ExpenseView user={user} expenses={expenses} />}
                 {activeTab === 'record' && <RecordView user={user} sessions={sessions} uniqueGyms={uniqueGyms} />}
                 {activeTab === 'passes' && <PassManagementView user={user} passes={passes} uniqueBrands={uniqueBrands} uniqueGyms={uniqueGyms} parkingInfo={parkingInfo} />}
                 {activeTab === 'history' && <HistoryView attendanceHistory={attendanceHistory} />}
@@ -245,8 +254,10 @@ export default function App() {
                 {activeTab === 'moves' && <MoveView moves={moves} />}
             </main>
 
-            <nav className="bg-white flex justify-around p-2 pb-5 fixed bottom-0 w-full max-w-md shadow-2xl">
+            {/* 하단 탭 메뉴 4개로 조정 */}
+            <nav className="bg-white border-t flex justify-around p-2 pb-5 fixed bottom-0 w-full max-w-md shadow-2xl">
                 <NavItem icon={<Home />} label="HOME" isActive={activeTab === 'home'} onClick={() => setActiveTab('home')} />
+                <NavItem icon={<Wallet />} label="WALLET" isActive={activeTab === 'expenses'} onClick={() => setActiveTab('expenses')} />
                 <NavItem icon={<Ticket />} label="TICKETS" isActive={activeTab === 'passes'} onClick={() => setActiveTab('passes')} />
                 <NavItem icon={<PenSquare />} label="TRAINING" isActive={activeTab === 'record'} onClick={() => setActiveTab('record')} />
             </nav>
@@ -290,6 +301,159 @@ const AuthScreen = () => {
                     </button>
                 </form>
                 <button onClick={() => setIsLogin(!isLogin)} className="w-full text-sm font-medium text-blue-600 underline underline-offset-4">{isLogin ? '처음이신가요? 계정 만들기' : '이미 계정이 있으신가요? 로그인'}</button>
+            </div>
+        </div>
+    );
+};
+
+// --- [ExpenseView: 클라이밍 가계부 추가] ---
+const ExpenseView = ({ user, expenses }) => {
+    const [showAddForm, setShowAddForm] = useState(false);
+    const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+    const [category, setCategory] = useState('입장권');
+    const [amount, setAmount] = useState('');
+    const [memo, setMemo] = useState('');
+    const [saving, setSaving] = useState(false);
+
+    // 날짜 계산 헬퍼 함수들
+    const getStartOfWeek = (d) => {
+        const date = new Date(d);
+        const day = date.getDay();
+        const diff = date.getDate() - day + (day === 0 ? -6 : 1); // 월요일 기준
+        return new Date(date.setDate(diff)).toISOString().split('T')[0];
+    };
+
+    const todayStr = new Date().toISOString().split('T')[0];
+    const currentMonthStr = todayStr.substring(0, 7); // YYYY-MM
+    const startOfWeekStr = getStartOfWeek(new Date());
+
+    // 통계 데이터 계산 (일간, 주간, 월간, 총계)
+    const stats = useMemo(() => {
+        let daily = 0, weekly = 0, monthly = 0, total = 0;
+
+        expenses.forEach(e => {
+            const val = Number(e.amount);
+            total += val;
+            if (e.date === todayStr) daily += val;
+            if (e.date >= startOfWeekStr && e.date <= todayStr) weekly += val;
+            if (e.date.startsWith(currentMonthStr)) monthly += val;
+        });
+
+        return { daily, weekly, monthly, total };
+    }, [expenses, todayStr, currentMonthStr, startOfWeekStr]);
+
+    // 카테고리별 색상 뱃지
+    const CATEGORY_STYLE = {
+        "입장권": "bg-blue-100 text-blue-700",
+        "주차비": "bg-gray-200 text-gray-700",
+        "장비/의류": "bg-orange-100 text-orange-700",
+        "간식/음료": "bg-green-100 text-green-700",
+        "기타": "bg-purple-100 text-purple-700"
+    };
+
+    const handleSave = async (e) => {
+        e.preventDefault();
+        if (!user || !amount || !memo) return;
+        setSaving(true);
+        try {
+            await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'expenses'), {
+                date,
+                category,
+                amount: Number(amount),
+                memo,
+                createdAt: serverTimestamp()
+            });
+            setShowAddForm(false);
+            setAmount('');
+            setMemo('');
+            setDate(new Date().toISOString().split('T')[0]);
+        } catch (err) { console.error(err); }
+        finally { setSaving(false); }
+    };
+
+    const handleDelete = async (id) => {
+        if (!window.confirm('기록을 삭제할까요? 통계에서 제외됩니다.')) return;
+        await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'expenses', id));
+    };
+
+    return (
+        <div className="space-y-6 animate-in fade-in pb-10">
+            {/* 1. 가계부 4단 통계 대시보드 */}
+            <section className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100">
+                <h3 className="font-bold text-gray-800 text-sm flex items-center gap-2 uppercase tracking-widest mb-4">
+                    <PieChart className="w-5 h-5 text-blue-600" /> Expense Summary
+                </h3>
+                <div className="grid grid-cols-2 gap-3">
+                    <div className="p-4 rounded-2xl bg-blue-50 border border-blue-100 flex flex-col justify-center">
+                        <span className="text-[10px] font-bold text-blue-500 uppercase tracking-widest mb-1">일간 (오늘)</span>
+                        <span className="text-lg font-black text-blue-700">{stats.daily.toLocaleString()}원</span>
+                    </div>
+                    <div className="p-4 rounded-2xl bg-indigo-50 border border-indigo-100 flex flex-col justify-center">
+                        <span className="text-[10px] font-bold text-indigo-500 uppercase tracking-widest mb-1">주간 (이번 주)</span>
+                        <span className="text-lg font-black text-indigo-700">{stats.weekly.toLocaleString()}원</span>
+                    </div>
+                    <div className="p-4 rounded-2xl bg-purple-50 border border-purple-100 flex flex-col justify-center">
+                        <span className="text-[10px] font-bold text-purple-500 uppercase tracking-widest mb-1">월간 (이번 달)</span>
+                        <span className="text-lg font-black text-purple-700">{stats.monthly.toLocaleString()}원</span>
+                    </div>
+                    <div className="p-4 rounded-2xl bg-gray-900 border border-gray-800 flex flex-col justify-center shadow-md shadow-gray-300">
+                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">총 누적 소비</span>
+                        <span className="text-lg font-black text-white">{stats.total.toLocaleString()}원</span>
+                    </div>
+                </div>
+            </section>
+
+            {/* 2. 지출 기록 추가 폼 */}
+            <section className="bg-white p-5 rounded-3xl border-2 border-dashed border-gray-200 transition-all hover:bg-gray-50/50">
+                <button onClick={() => setShowAddForm(!showAddForm)} className="w-full flex items-center justify-between font-bold text-gray-700 uppercase tracking-widest text-sm">
+                    <span className="flex items-center gap-2"><Plus className="w-5 h-5" /> 새 지출 기록하기</span>
+                    <ChevronDown className={`transition-transform duration-300 ${showAddForm ? 'rotate-180' : ''}`} />
+                </button>
+                {showAddForm && (
+                    <form onSubmit={handleSave} className="mt-5 space-y-4 animate-in slide-in-from-top-4">
+                        <div className="grid grid-cols-2 gap-3">
+                            <input type="date" className="w-full bg-white p-3.5 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-blue-500 text-sm font-semibold text-gray-700 shadow-sm" value={date} onChange={e => setDate(e.target.value)} required />
+                            <select value={category} onChange={e => setCategory(e.target.value)} className="w-full bg-white p-3.5 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-blue-500 text-sm font-semibold text-gray-700 shadow-sm">
+                                <option value="입장권">입장권 (일일권/정기권)</option>
+                                <option value="주차비">주차비/교통비</option>
+                                <option value="장비/의류">장비/의류 (암벽화/초크 등)</option>
+                                <option value="간식/음료">간식/음료/식비</option>
+                                <option value="기타">기타 잡화</option>
+                            </select>
+                        </div>
+                        <input type="number" placeholder="금액 입력 (원)" className="w-full bg-white p-3.5 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-blue-500 text-sm font-bold text-gray-800 shadow-sm" value={amount} onChange={e => setAmount(e.target.value)} required />
+                        <input placeholder="내역 메모 (예: 테이프 2개, 초크 리필)" className="w-full bg-white p-3.5 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-blue-500 text-sm font-medium text-gray-700 shadow-sm" value={memo} onChange={e => setMemo(e.target.value)} required />
+                        <button disabled={saving} className="w-full py-3.5 bg-gray-900 text-white rounded-xl font-bold tracking-widest uppercase shadow-lg shadow-gray-300 hover:bg-gray-800 transition-colors disabled:opacity-50">
+                            {saving ? '저장 중...' : '지출 저장하기 💸'}
+                        </button>
+                    </form>
+                )}
+            </section>
+
+            {/* 3. 최근 지출 리스트 */}
+            <div className="space-y-3">
+                <h3 className="text-[10px] text-gray-400 uppercase font-bold px-2 tracking-widest pt-2">Recent Expenses</h3>
+                {expenses.map(e => (
+                    <div key={e.id} className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex justify-between items-center group">
+                        <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1.5">
+                                <span className={`text-[9px] font-bold px-2 py-0.5 rounded-md ${CATEGORY_STYLE[e.category] || CATEGORY_STYLE["기타"]}`}>{e.category}</span>
+                                <span className="text-[10px] font-bold text-gray-400">{e.date}</span>
+                            </div>
+                            <h4 className="font-bold text-sm text-gray-800 break-keep">{e.memo}</h4>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <span className="font-black text-gray-900">{Number(e.amount).toLocaleString()}원</span>
+                            <button onClick={() => handleDelete(e.id)} className="text-gray-300 hover:text-rose-500 transition-colors"><Trash2 className="w-4 h-4" /></button>
+                        </div>
+                    </div>
+                ))}
+                {expenses.length === 0 && (
+                    <div className="w-full p-8 bg-gray-50 rounded-3xl border border-gray-100 text-center shadow-inner">
+                        <Receipt className="w-6 h-6 text-gray-300 mx-auto mb-2" />
+                        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">기록된 지출이 없습니다</p>
+                    </div>
+                )}
             </div>
         </div>
     );
@@ -507,7 +671,6 @@ const RecordView = ({ user, sessions, uniqueGyms }) => {
     const [newSummary, setNewSummary] = useState('');
     const [saving, setSaving] = useState(false);
 
-    // [수정 포인트] 1. 차트를 필터링할 '브랜드' 상태 추가 (기본값: 제일 많이 간 곳 또는 첫 번째 브랜드)
     const sessionBrands = useMemo(() => {
         const brands = sessions.map(s => s.gymName.split(' ')[0]);
         return Array.from(new Set(brands));
@@ -524,7 +687,6 @@ const RecordView = ({ user, sessions, uniqueGyms }) => {
     const finalGymName = selectedGym === 'manual' ? customGym.trim() : selectedGym;
     const currentGymLevels = getLevelsForGym(finalGymName);
 
-    // 암장 브랜드별 최고 기록 추출
     const highestRecords = useMemo(() => {
         const records = {};
         sessions.forEach(s => {
@@ -539,9 +701,7 @@ const RecordView = ({ user, sessions, uniqueGyms }) => {
         return Object.entries(records).sort((a, b) => b[1].idx - a[1].idx);
     }, [sessions]);
 
-    // [수정 포인트] 2. 필터링된 브랜드에 완벽히 맞춰진 차트 데이터 계산
     const chartData = useMemo(() => {
-        // 선택된 브랜드의 데이터만 필터링하여 최신 7개 추출
         const filteredSessions = [...sessions]
             .filter(s => s.gymName.startsWith(chartBrandFilter))
             .sort((a, b) => (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0))
@@ -549,7 +709,6 @@ const RecordView = ({ user, sessions, uniqueGyms }) => {
 
         if (filteredSessions.length === 0) return null;
 
-        // 선택된 브랜드의 고유 레벨 시스템(Y축) 가져오기
         const levels = getLevelsForGym(chartBrandFilter);
         const height = 150;
         const yStep = height / Math.max(1, levels.length - 1);
@@ -565,7 +724,6 @@ const RecordView = ({ user, sessions, uniqueGyms }) => {
                     x: filteredSessions.length === 1 ? 170 : 50 + (i * xStep),
                     y: height - (safeIdx * yStep),
                     val: s.topLevel,
-                    // 날짜에서 '월 일'만 추출 (예: 4월 10일 -> 4/10)
                     date: s.date.replace(/[^0-9]/g, '').slice(-4).replace(/(\d{2})(\d{2})/, '$1/$2')
                 };
             })
@@ -597,7 +755,6 @@ const RecordView = ({ user, sessions, uniqueGyms }) => {
     return (
         <div className="space-y-6 animate-in fade-in pb-10">
 
-            {/* 1. 암장별 최고 기록 뱃지 */}
             <section className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100">
                 <h3 className="font-bold text-gray-800 text-sm flex items-center gap-2 uppercase tracking-widest mb-4">
                     <Trophy className="w-5 h-5 text-amber-500" /> Best Records per Gym
@@ -616,13 +773,11 @@ const RecordView = ({ user, sessions, uniqueGyms }) => {
                 )}
             </section>
 
-            {/* 2. 브랜드 맞춤형 기간별 성장 흐름 차트 */}
             <section className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100">
                 <div className="flex justify-between items-center mb-4">
                     <h3 className="font-bold text-gray-800 text-sm flex items-center gap-2 uppercase tracking-widest">
                         <TrendingUp className="w-5 h-5 text-blue-600" /> Growth Chart
                     </h3>
-                    {/* [수정 포인트] 3. 브랜드 선택 드롭다운 */}
                     {sessionBrands.length > 0 && (
                         <select
                             value={chartBrandFilter}
@@ -637,11 +792,8 @@ const RecordView = ({ user, sessions, uniqueGyms }) => {
                 <div className="w-full bg-gray-50 rounded-2xl p-4 overflow-x-auto scrollbar-hide border border-gray-100/50">
                     {chartData ? (
                         <svg width="320" height="190" className="mx-auto overflow-visible">
-                            {/* [수정 포인트] 4. 선택된 브랜드의 레벨(Y축) 라벨과 가이드 라인 동적 생성 */}
                             {chartData.levels.map((lv, i) => {
                                 const yPos = 150 - i * chartData.yStep;
-                                // 너무 조밀해지지 않도록, 짝수번째나 특정 조건에서만 선/글씨를 보여줄 수 있지만,
-                                // ESFJ를 위해 모든 난이도를 정확하게 표시합니다.
                                 return (
                                     <g key={lv}>
                                         <text x="40" y={yPos + 3} textAnchor="end" className="text-[8px] fill-gray-500 font-bold">{lv}</text>
@@ -650,12 +802,10 @@ const RecordView = ({ user, sessions, uniqueGyms }) => {
                                 );
                             })}
 
-                            {/* 꺾은선 그리기 */}
                             {chartData.points.length > 1 && (
                                 <path d={`M ${chartData.points[0].x} ${chartData.points[0].y} ${chartData.points.map(p => `L ${p.x} ${p.y}`).join(' ')}`} fill="none" stroke="#2563EB" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
                             )}
 
-                            {/* 데이터 점과 날짜 라벨 */}
                             {chartData.points.map((p, i) => (
                                 <g key={i}>
                                     <circle cx={p.x} cy={p.y} r="4" fill="#2563EB" stroke="white" strokeWidth="1.5" />
@@ -672,7 +822,6 @@ const RecordView = ({ user, sessions, uniqueGyms }) => {
                 </div>
             </section>
 
-            {/* 3. 하이라이트 다중 기록 폼 */}
             <section className="bg-white p-5 rounded-3xl border-2 border-dashed border-blue-200 transition-all hover:bg-blue-50/50">
                 <button onClick={() => setShowAddForm(!showAddForm)} className="w-full flex items-center justify-between font-bold text-blue-600 uppercase tracking-widest text-sm">
                     <span className="flex items-center gap-2"><Plus className="w-5 h-5" /> 새 하이라이트 추가하기</span>
@@ -702,7 +851,6 @@ const RecordView = ({ user, sessions, uniqueGyms }) => {
                 )}
             </section>
 
-            {/* 4. 기록 히스토리 리스트 (최신순) */}
             <div className="space-y-4">
                 <h3 className="text-[10px] text-gray-400 uppercase font-bold px-2 tracking-widest pt-2">My Highlights</h3>
                 {sessions.map(s => (
@@ -712,7 +860,6 @@ const RecordView = ({ user, sessions, uniqueGyms }) => {
                                 <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{s.date}</span>
                                 <h4 className="font-bold text-gray-800 text-sm uppercase mt-0.5">{s.gymName}</h4>
                             </div>
-                            {/* 레벨 뱃지 색상 연동 */}
                             <span className={`text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm border ${LEVEL_COLORS[s.topLevel] || 'bg-gray-100 text-gray-800'}`}>
                       {s.topLevel}
                     </span>
@@ -736,24 +883,20 @@ const PassManagementView = ({ user, passes, uniqueBrands, uniqueGyms, parkingInf
     const [selectedBrand, setSelectedBrand] = useState(uniqueBrands[0] || '');
     const [customBrand, setCustomBrand] = useState('');
 
-    // 티켓 종류, 기간, 횟수
-    const [type, setType] = useState('punch'); // 'punch' or 'period'
-    const [total, setTotal] = useState(10); // 횟수권용
-    const [months, setMonths] = useState(1); // 기간권용
+    const [type, setType] = useState('punch');
+    const [total, setTotal] = useState(10);
+    const [months, setMonths] = useState(1);
 
-    // 구매일과 만료일
     const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
     const [endDate, setEndDate] = useState('');
 
     const [savingPass, setSavingPass] = useState(false);
 
-    // 주차 정보 폼 상태
     const [selectedParkGym, setSelectedParkGym] = useState(uniqueGyms[0] || '');
     const [customParkGym, setCustomParkGym] = useState('');
     const [parkingMemo, setParkingMemo] = useState('');
     const [savingPark, setSavingPark] = useState(false);
 
-    // 날짜 자동 계산
     useEffect(() => {
         if (startDate) {
             const d = new Date(startDate);
@@ -826,8 +969,6 @@ const PassManagementView = ({ user, passes, uniqueBrands, uniqueGyms, parkingInf
 
     return (
         <div className="space-y-8 animate-in fade-in pb-10">
-
-            {/* 섹션 1: 종합 티켓 등록 폼 */}
             <section className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
                 <div className="flex justify-between items-center mb-6">
                     <h3 className="text-sm font-bold text-gray-800 uppercase tracking-widest flex items-center gap-2">
@@ -837,7 +978,6 @@ const PassManagementView = ({ user, passes, uniqueBrands, uniqueGyms, parkingInf
                 </div>
 
                 <form onSubmit={handleAddPass} className="space-y-4">
-                    {/* 1. 브랜드 선택 */}
                     <div className="space-y-1">
                         <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-1">브랜드 선택 (공통 사용)</label>
                         <select value={selectedBrand} onChange={e => setSelectedBrand(e.target.value)} className="w-full bg-gray-50 p-3.5 rounded-xl border border-gray-100 outline-none focus:ring-2 focus:ring-blue-500 text-sm font-semibold text-gray-800">
@@ -911,7 +1051,6 @@ const PassManagementView = ({ user, passes, uniqueBrands, uniqueGyms, parkingInf
                     </button>
                 </form>
 
-                {/* 등록된 이용권 리스트 */}
                 <div className="mt-8 space-y-3">
                     <h3 className="text-[10px] text-gray-400 uppercase font-bold px-2 tracking-widest mb-3 border-t border-gray-100 pt-6">All Registered Tickets</h3>
                     {passes.map(p => (
@@ -939,7 +1078,6 @@ const PassManagementView = ({ user, passes, uniqueBrands, uniqueGyms, parkingInf
                 </div>
             </section>
 
-            {/* 섹션 2: 주차 정보(지점 단위) 개별 등록 폼 */}
             <section className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
                 <h3 className="text-sm font-bold text-gray-800 uppercase tracking-widest mb-6 flex items-center gap-2">
                     <Car className="w-5 h-5 text-blue-600" /> 2. 지점별 주차장 관리
@@ -963,7 +1101,6 @@ const PassManagementView = ({ user, passes, uniqueBrands, uniqueGyms, parkingInf
                     </button>
                 </form>
 
-                {/* 등록된 주차 정보 리스트 */}
                 <div className="mt-6 space-y-2">
                     <h3 className="text-[10px] text-gray-400 uppercase font-bold px-2 tracking-widest mb-3 border-t border-gray-100 pt-6">Saved Parking Infos</h3>
                     {Object.entries(parkingInfo).map(([gymName, info]) => (
@@ -983,7 +1120,7 @@ const PassManagementView = ({ user, passes, uniqueBrands, uniqueGyms, parkingInf
     );
 };
 
-// --- [HistoryView: 출석 기록 리스트 렌더링] ---
+// --- [HistoryView] ---
 const HistoryView = ({ attendanceHistory }) => {
     const sortedDates = Object.keys(attendanceHistory).sort((a, b) => {
         if (a.includes('-') && b.includes('-')) return b.localeCompare(a);
@@ -1028,11 +1165,9 @@ const HistoryView = ({ attendanceHistory }) => {
     );
 };
 
-// --- [QuestHistoryView: 퀘스트 진행 상황 및 날짜별 달성 이력 렌더링] ---
+// --- [QuestHistoryView] ---
 const QuestHistoryView = ({ quests, questHistory }) => {
     const completedCount = quests.filter(q => q.current === q.goal).length;
-
-    // 날짜(key)를 최신순(내림차순)으로 정렬합니다.
     const sortedDates = Object.keys(questHistory).sort((a, b) => b.localeCompare(a));
 
     const getQuestIcon = (name) => {
@@ -1043,7 +1178,6 @@ const QuestHistoryView = ({ quests, questHistory }) => {
 
     return (
         <div className="space-y-5 animate-in fade-in pb-10">
-            {/* 1. 현재 퀘스트 진행 현황 (상단) */}
             <section className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
                 <div className="flex justify-between items-center mb-6">
                     <h3 className="font-bold text-gray-800 text-sm flex items-center gap-2 uppercase tracking-widest">
@@ -1083,7 +1217,6 @@ const QuestHistoryView = ({ quests, questHistory }) => {
                 </div>
             </section>
 
-            {/* 2. [추가됨] 날짜별 퀘스트 달성 히스토리 (하단) */}
             <section className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
                 <h3 className="font-bold text-gray-800 text-sm flex items-center gap-2 uppercase tracking-widest mb-6">
                     <History className="w-5 h-5 text-orange-500" /> Completed History
