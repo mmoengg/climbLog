@@ -208,10 +208,9 @@ export default function App() {
         </div>
     );
 
-    if (!user) return <AuthScreen />;
-
     return (
-        <div className="flex flex-col h-screen bg-gray-50 text-gray-800 font-sans max-w-md mx-auto shadow-lg relative overflow-hidden text-left">
+        // 외곽선(border) 제거 및 그림자 부드럽게 조정
+        <div className="flex flex-col h-screen bg-gray-50 text-gray-800 font-sans max-w-md mx-auto shadow-[0_0_40px_rgba(0,0,0,0.05)] relative overflow-hidden text-left">
 
             {/* Sidebar Menu */}
             <div className={`fixed inset-0 z-50 transition-all duration-300 ${isMenuOpen ? 'visible' : 'invisible'}`}>
@@ -253,7 +252,8 @@ export default function App() {
                 {activeTab === 'moves' && <MoveView moves={moves} />}
             </main>
 
-            <nav className="bg-white flex justify-around p-2 pb-5 fixed bottom-0 w-full max-w-md shadow-2xl">
+            {/* 하단 네비게이션 border-t 제거 */}
+            <nav className="bg-white flex justify-around p-2 pb-5 fixed bottom-0 w-full max-w-md shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
                 <NavItem icon={<Home />} label="HOME" isActive={activeTab === 'home'} onClick={() => setActiveTab('home')} />
                 <NavItem icon={<Wallet />} label="WALLET" isActive={activeTab === 'expenses'} onClick={() => setActiveTab('expenses')} />
                 <NavItem icon={<Ticket />} label="TICKETS" isActive={activeTab === 'passes'} onClick={() => setActiveTab('passes')} />
@@ -304,7 +304,7 @@ const AuthScreen = () => {
     );
 };
 
-// --- [ExpenseView: 클라이밍 가계부 추가] ---
+// --- [ExpenseView: 클라이밍 가계부] ---
 const ExpenseView = ({ user, expenses }) => {
     const [showAddForm, setShowAddForm] = useState(false);
     const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
@@ -404,9 +404,13 @@ const ExpenseView = ({ user, expenses }) => {
                 </button>
                 {showAddForm && (
                     <form onSubmit={handleSave} className="mt-5 space-y-4 animate-in slide-in-from-top-4">
-                        <div className="grid grid-cols-2 gap-3">
-                            <input type="date" className="w-full min-w-0 bg-white p-3.5 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-blue-500 text-sm font-semibold text-gray-700 shadow-sm" value={date} onChange={e => setDate(e.target.value)} required />
-                            <select value={category} onChange={e => setCategory(e.target.value)} className="w-full min-w-0 bg-white p-3.5 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-blue-500 text-sm font-semibold text-gray-700 shadow-sm">
+                        <div className="space-y-3">
+                            {/* 사파리 레이아웃 버그 해결: 위아래로 깔끔하게 분리 */}
+                            <div className="flex justify-between items-center bg-white p-3.5 rounded-xl border border-gray-200 shadow-sm">
+                                <label className="text-[10px] text-gray-400 font-bold uppercase tracking-widest shrink-0">결제 날짜</label>
+                                <input type="date" className="appearance-none bg-transparent outline-none text-sm font-bold text-gray-700 text-right w-32" value={date} onChange={e => setDate(e.target.value)} required />
+                            </div>
+                            <select value={category} onChange={e => setCategory(e.target.value)} className="w-full bg-white p-3.5 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-blue-500 text-sm font-semibold text-gray-700 shadow-sm">
                                 <option value="입장권">입장권 (일일권/정기권)</option>
                                 <option value="주차비">주차비/교통비</option>
                                 <option value="장비/의류">장비/의류 (암벽화/초크 등)</option>
@@ -549,7 +553,6 @@ const HomeView = ({ user, attendanceDays, passes, gearInfo, quests, attendanceHi
 
     return (
         <div className="space-y-5 animate-in fade-in duration-700">
-            {/* 1. 캘린더 및 직관적인 출석 버튼 */}
             <section className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100">
                 <div className="flex justify-between items-center mb-5">
                     <h3 className="font-bold text-gray-800 flex items-center gap-2 uppercase tracking-widest text-sm"><Calendar className="w-5 h-5 text-blue-600" /> Attendance</h3>
@@ -577,11 +580,12 @@ const HomeView = ({ user, attendanceDays, passes, gearInfo, quests, attendanceHi
                                 <button onClick={() => { setShowCheckInOptions(false); setAttendanceDate(new Date().toISOString().split('T')[0]); }} className="text-gray-400 hover:text-gray-600 p-1 bg-white rounded-full shadow-sm"><X className="w-4 h-4" /></button>
                             </div>
 
-                            <div className="bg-white p-3 rounded-xl border border-gray-200 mb-3 shadow-sm flex items-center justify-between min-w-0">
-                                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest shrink-0 mr-2">출석 날짜</label>
+                            {/* 사파리 레이아웃 버그 해결: input에 appearance-none 추가 및 여백 확보 */}
+                            <div className="bg-white p-3.5 rounded-xl border border-gray-200 mb-3 shadow-sm flex items-center justify-between">
+                                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest shrink-0">출석 날짜</label>
                                 <input
                                     type="date"
-                                    className="bg-gray-50 border border-gray-100 outline-none focus:ring-2 focus:ring-blue-500 text-xs font-bold text-gray-700 px-3 py-1.5 rounded-lg min-w-0 w-full flex-1"
+                                    className="appearance-none bg-transparent outline-none text-sm font-bold text-gray-700 text-right w-32"
                                     value={attendanceDate}
                                     onChange={e => setAttendanceDate(e.target.value)}
                                 />
@@ -603,7 +607,7 @@ const HomeView = ({ user, attendanceDays, passes, gearInfo, quests, attendanceHi
                                 <div className="space-y-2">
                                     <input
                                         placeholder="방문한 지점명 직접 입력 (예: 더클라임 연남)"
-                                        className="w-full min-w-0 bg-gray-50 p-3 rounded-lg border border-gray-100 outline-none focus:ring-2 focus:ring-blue-500 text-sm font-semibold text-gray-700"
+                                        className="w-full bg-gray-50 p-3 rounded-lg border border-gray-100 outline-none focus:ring-2 focus:ring-blue-500 text-sm font-semibold text-gray-700"
                                         value={customAttGym}
                                         onChange={e => setCustomAttGym(e.target.value)}
                                     />
@@ -620,7 +624,6 @@ const HomeView = ({ user, attendanceDays, passes, gearInfo, quests, attendanceHi
                 </div>
             </section>
 
-            {/* 2. 마이크로 퀘스트 */}
             <section className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100">
                 <h3 className="font-bold text-gray-800 text-sm flex items-center gap-2 uppercase tracking-widest mb-4">
                     <Flame className="w-5 h-5 text-orange-500" /> Daily Micro-Quests
@@ -647,7 +650,6 @@ const HomeView = ({ user, attendanceDays, passes, gearInfo, quests, attendanceHi
                 </div>
             </section>
 
-            {/* 3. 이용권 지갑 */}
             <div className="flex gap-3 overflow-x-auto pb-4 scrollbar-hide px-1">
                 {urgentPasses.map(p => (
                     <div key={p.id} className={`min-w-[270px] p-5 rounded-3xl border transition-all relative overflow-hidden ${p.type === 'period' ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'bg-white border-gray-100 shadow-sm'}`}>
@@ -683,7 +685,6 @@ const HomeView = ({ user, attendanceDays, passes, gearInfo, quests, attendanceHi
                 )}
             </div>
 
-            {/* 5. 암벽화 수명 관리 */}
             <section className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm">
                 {!showShoeForm ? (
                     <div className="flex items-center justify-between">
@@ -712,16 +713,16 @@ const HomeView = ({ user, attendanceDays, passes, gearInfo, quests, attendanceHi
                         </div>
                         <input
                             placeholder="암벽화 이름 (예: VSR, 드론)"
-                            className="w-full min-w-0 bg-gray-50 p-3 rounded-xl border border-gray-100 outline-none focus:ring-2 focus:ring-blue-500 text-sm font-semibold text-gray-800"
+                            className="w-full bg-gray-50 p-3 rounded-xl border border-gray-100 outline-none focus:ring-2 focus:ring-blue-500 text-sm font-semibold text-gray-800"
                             value={shoeNameInput}
                             onChange={e => setShoeNameInput(e.target.value)}
                             required
                         />
-                        <div className="flex items-center gap-3 bg-gray-50 p-3 rounded-xl border border-gray-100">
-                            <label className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">예상 수명(출석 횟수)</label>
+                        <div className="flex items-center justify-between bg-gray-50 p-3 rounded-xl border border-gray-100">
+                            <label className="text-[10px] text-gray-500 font-bold uppercase tracking-widest shrink-0">예상 수명(출석 횟수)</label>
                             <input
                                 type="number"
-                                className="bg-white min-w-0 p-2 rounded-lg border border-gray-200 outline-none focus:ring-2 focus:ring-blue-500 text-sm font-bold w-20 text-center ml-auto shadow-sm"
+                                className="bg-white p-2 rounded-lg border border-gray-200 outline-none focus:ring-2 focus:ring-blue-500 text-sm font-bold w-20 text-center shadow-sm"
                                 value={shoeMaxInput}
                                 onChange={e => setShoeMaxInput(e.target.value)}
                                 min="1"
@@ -738,7 +739,7 @@ const HomeView = ({ user, attendanceDays, passes, gearInfo, quests, attendanceHi
     );
 };
 
-// --- [RecordView: 브랜드별 맞춤형 데이터 대시보드] ---
+// --- [RecordView] ---
 const RecordView = ({ user, sessions, uniqueGyms }) => {
     const [showAddForm, setShowAddForm] = useState(false);
     const [selectedGym, setSelectedGym] = useState(uniqueGyms[0] || '');
@@ -858,7 +859,7 @@ const RecordView = ({ user, sessions, uniqueGyms }) => {
                         <select
                             value={chartBrandFilter}
                             onChange={(e) => setChartBrandFilter(e.target.value)}
-                            className="text-xs font-bold text-blue-700 bg-blue-50 border-none outline-none rounded-lg px-2 py-1 cursor-pointer min-w-0"
+                            className="text-xs font-bold text-blue-700 bg-blue-50 border-none outline-none rounded-lg px-2 py-1 cursor-pointer"
                         >
                             {sessionBrands.map(b => <option key={b} value={b}>{b}</option>)}
                         </select>
@@ -907,19 +908,19 @@ const RecordView = ({ user, sessions, uniqueGyms }) => {
                     <form onSubmit={handleSave} className="mt-5 space-y-4 animate-in slide-in-from-top-4">
                         <div className="space-y-3">
                             <label className="text-xs font-bold text-gray-500 ml-1">방문한 지점 선택</label>
-                            <select value={selectedGym} onChange={e => setSelectedGym(e.target.value)} className="w-full min-w-0 bg-white p-3.5 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-blue-500 text-sm font-semibold text-gray-700 shadow-sm">
+                            <select value={selectedGym} onChange={e => setSelectedGym(e.target.value)} className="w-full bg-white p-3.5 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-blue-500 text-sm font-semibold text-gray-700 shadow-sm">
                                 {uniqueGyms.map(g => <option key={g} value={g}>{g}</option>)}
                                 <option value="manual">직접 입력 (+)</option>
                             </select>
                             {selectedGym === 'manual' && (
-                                <input placeholder="새로운 방문 지점명 입력 (예: 손상원 강남)" className="w-full min-w-0 bg-white p-3.5 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-blue-500 text-sm font-semibold text-gray-700 shadow-sm" value={customGym} onChange={e => setCustomGym(e.target.value)} required />
+                                <input placeholder="새로운 방문 지점명 입력 (예: 손상원 강남)" className="w-full bg-white p-3.5 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-blue-500 text-sm font-semibold text-gray-700 shadow-sm" value={customGym} onChange={e => setCustomGym(e.target.value)} required />
                             )}
-                            <select value={newLevel} onChange={e => setNewLevel(e.target.value)} className="w-full min-w-0 bg-white p-3.5 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-blue-500 text-sm font-semibold text-gray-700 shadow-sm" required>
+                            <select value={newLevel} onChange={e => setNewLevel(e.target.value)} className="w-full bg-white p-3.5 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-blue-500 text-sm font-semibold text-gray-700 shadow-sm" required>
                                 <option value="">성공한 문제의 레벨을 선택하세요</option>
                                 {currentGymLevels.map(lv => <option key={lv} value={lv}>{lv}</option>)}
                             </select>
                         </div>
-                        <textarea placeholder="오늘의 하이라이트 무브나 피드백을 자유롭게 기록하세요! (하루에 여러 개 작성 가능)" className="w-full min-w-0 bg-white p-4 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-blue-500 text-sm font-medium h-28 shadow-sm placeholder:text-gray-400 leading-relaxed" value={newSummary} onChange={e => setNewSummary(e.target.value)} />
+                        <textarea placeholder="오늘의 하이라이트 무브나 피드백을 자유롭게 기록하세요! (하루에 여러 개 작성 가능)" className="w-full bg-white p-4 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-blue-500 text-sm font-medium h-28 shadow-sm placeholder:text-gray-400 leading-relaxed" value={newSummary} onChange={e => setNewSummary(e.target.value)} />
                         <button disabled={saving} className="w-full py-4 bg-blue-600 text-white rounded-xl font-bold tracking-widest uppercase shadow-lg shadow-blue-200 hover:bg-blue-700 transition-colors disabled:opacity-50">
                             {saving ? '저장 중...' : '기록 저장하기 🧗'}
                         </button>
@@ -1056,29 +1057,30 @@ const PassManagementView = ({ user, passes, uniqueBrands, uniqueGyms, parkingInf
                 <form onSubmit={handleAddPass} className="space-y-4">
                     <div className="space-y-1">
                         <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-1">브랜드 선택 (공통 사용)</label>
-                        <select value={selectedBrand} onChange={e => setSelectedBrand(e.target.value)} className="w-full min-w-0 bg-gray-50 p-3.5 rounded-xl border border-gray-100 outline-none focus:ring-2 focus:ring-blue-500 text-sm font-semibold text-gray-800">
+                        <select value={selectedBrand} onChange={e => setSelectedBrand(e.target.value)} className="w-full bg-gray-50 p-3.5 rounded-xl border border-gray-100 outline-none focus:ring-2 focus:ring-blue-500 text-sm font-semibold text-gray-800">
                             {uniqueBrands.map(b => <option key={b} value={b}>{b}</option>)}
                             <option value="manual">직접 입력 (+)</option>
                         </select>
                     </div>
                     {selectedBrand === 'manual' && (
-                        <input placeholder="새로운 브랜드명 (예: 알레)" className="w-full min-w-0 bg-gray-50 p-3.5 rounded-xl border border-gray-100 outline-none focus:ring-2 focus:ring-blue-500 text-sm font-semibold text-gray-800 animate-in slide-in-from-top-2" value={customBrand} onChange={e => setCustomBrand(e.target.value)} required />
+                        <input placeholder="새로운 브랜드명 (예: 알레)" className="w-full bg-gray-50 p-3.5 rounded-xl border border-gray-100 outline-none focus:ring-2 focus:ring-blue-500 text-sm font-semibold text-gray-800 animate-in slide-in-from-top-2" value={customBrand} onChange={e => setCustomBrand(e.target.value)} required />
                     )}
 
                     <div className="space-y-3">
                         <div className="space-y-1">
                             <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-1">이용권 종류</label>
-                            <select value={type} onChange={e => setType(e.target.value)} className="w-full min-w-0 bg-gray-50 p-3.5 rounded-xl border border-gray-100 outline-none focus:ring-2 focus:ring-blue-500 text-sm font-semibold text-gray-800">
+                            <select value={type} onChange={e => setType(e.target.value)} className="w-full bg-gray-50 p-3.5 rounded-xl border border-gray-100 outline-none focus:ring-2 focus:ring-blue-500 text-sm font-semibold text-gray-800">
                                 <option value="punch">횟수권</option>
                                 <option value="period">기간권</option>
                             </select>
                         </div>
 
+                        {/* 사파리 레이아웃 버그 해결: 구매일/유효기간 수직 분리 */}
                         {type === 'punch' ? (
-                            <div className="space-y-3 bg-orange-50/50 p-4 rounded-2xl border border-orange-100">
-                                <div className="flex items-center justify-between mb-2">
-                                    <label className="text-xs text-orange-800 font-bold uppercase tracking-widest">전체 횟수 설정</label>
-                                    <select value={total} onChange={e => setTotal(Number(e.target.value))} className="bg-white min-w-0 p-2 rounded-lg border border-orange-200 outline-none focus:ring-2 focus:ring-orange-500 text-xs font-bold text-orange-700 shadow-sm">
+                            <div className="space-y-2 bg-orange-50/50 p-4 rounded-2xl border border-orange-100">
+                                <div className="flex items-center justify-between mb-3 bg-white p-3 rounded-xl border border-orange-100 shadow-sm">
+                                    <label className="text-xs text-orange-800 font-bold uppercase tracking-widest shrink-0">전체 횟수 설정</label>
+                                    <select value={total} onChange={e => setTotal(Number(e.target.value))} className="bg-transparent outline-none text-xs font-bold text-orange-700">
                                         <option value={5}>5회</option>
                                         <option value={10}>10회</option>
                                         <option value={15}>15회</option>
@@ -1086,37 +1088,33 @@ const PassManagementView = ({ user, passes, uniqueBrands, uniqueGyms, parkingInf
                                         <option value={30}>30회</option>
                                     </select>
                                 </div>
-                                <div className="grid grid-cols-2 gap-3">
-                                    <div className="min-w-0">
-                                        <label className="text-[9px] text-gray-500 font-bold uppercase tracking-widest mb-1 block truncate">구매일</label>
-                                        <input type="date" className="w-full min-w-0 bg-white p-3 rounded-xl border border-orange-200 text-xs font-bold text-gray-700" value={startDate} onChange={e => setStartDate(e.target.value)} required />
-                                    </div>
-                                    <div className="min-w-0">
-                                        <label className="text-[9px] text-rose-500 font-bold uppercase tracking-widest mb-1 block truncate">유효기간 (만료일)</label>
-                                        <input type="date" className="w-full min-w-0 bg-white p-3 rounded-xl border border-rose-200 text-xs font-bold text-rose-700" value={endDate} onChange={e => setEndDate(e.target.value)} required />
-                                    </div>
+                                <div className="flex items-center justify-between bg-white p-3.5 rounded-xl border border-gray-200 shadow-sm">
+                                    <label className="text-[10px] text-gray-500 font-bold uppercase tracking-widest shrink-0">구매일</label>
+                                    <input type="date" className="appearance-none bg-transparent outline-none text-sm font-bold text-gray-700 text-right w-32" value={startDate} onChange={e => setStartDate(e.target.value)} required />
+                                </div>
+                                <div className="flex items-center justify-between bg-white p-3.5 rounded-xl border border-rose-200 shadow-sm">
+                                    <label className="text-[10px] text-rose-500 font-bold uppercase tracking-widest shrink-0">유효기간</label>
+                                    <input type="date" className="appearance-none bg-transparent outline-none text-sm font-bold text-rose-700 text-right w-32" value={endDate} onChange={e => setEndDate(e.target.value)} required />
                                 </div>
                             </div>
                         ) : (
-                            <div className="space-y-3 bg-blue-50/50 p-4 rounded-2xl border border-blue-100">
-                                <div className="flex items-center justify-between mb-2">
-                                    <label className="text-xs text-blue-800 font-bold uppercase tracking-widest">기간 설정</label>
-                                    <select value={months} onChange={e => setMonths(Number(e.target.value))} className="bg-white min-w-0 p-2 rounded-lg border border-blue-200 outline-none focus:ring-2 focus:ring-blue-500 text-xs font-bold text-blue-700 shadow-sm">
+                            <div className="space-y-2 bg-blue-50/50 p-4 rounded-2xl border border-blue-100">
+                                <div className="flex items-center justify-between mb-3 bg-white p-3 rounded-xl border border-blue-100 shadow-sm">
+                                    <label className="text-xs text-blue-800 font-bold uppercase tracking-widest shrink-0">기간 설정</label>
+                                    <select value={months} onChange={e => setMonths(Number(e.target.value))} className="bg-transparent outline-none text-xs font-bold text-blue-700">
                                         <option value={1}>1개월</option>
                                         <option value={3}>3개월</option>
                                         <option value={6}>6개월</option>
                                         <option value={12}>12개월</option>
                                     </select>
                                 </div>
-                                <div className="grid grid-cols-2 gap-3">
-                                    <div className="min-w-0">
-                                        <label className="text-[9px] text-gray-500 font-bold uppercase tracking-widest mb-1 block truncate">시작일</label>
-                                        <input type="date" className="w-full min-w-0 bg-white p-3 rounded-xl border border-blue-200 text-xs font-bold text-gray-700" value={startDate} onChange={e => setStartDate(e.target.value)} required />
-                                    </div>
-                                    <div className="min-w-0">
-                                        <label className="text-[9px] text-rose-500 font-bold uppercase tracking-widest mb-1 block truncate">만료일 (자동계산)</label>
-                                        <input type="date" className="w-full min-w-0 bg-white p-3 rounded-xl border border-rose-200 text-xs font-bold text-rose-700" value={endDate} onChange={e => setEndDate(e.target.value)} required />
-                                    </div>
+                                <div className="flex items-center justify-between bg-white p-3.5 rounded-xl border border-gray-200 shadow-sm">
+                                    <label className="text-[10px] text-gray-500 font-bold uppercase tracking-widest shrink-0">시작일</label>
+                                    <input type="date" className="appearance-none bg-transparent outline-none text-sm font-bold text-gray-700 text-right w-32" value={startDate} onChange={e => setStartDate(e.target.value)} required />
+                                </div>
+                                <div className="flex items-center justify-between bg-white p-3.5 rounded-xl border border-rose-200 shadow-sm">
+                                    <label className="text-[10px] text-rose-500 font-bold uppercase tracking-widest shrink-0">만료일 (자동계산)</label>
+                                    <input type="date" className="appearance-none bg-transparent outline-none text-sm font-bold text-rose-700 text-right w-32" value={endDate} onChange={e => setEndDate(e.target.value)} required />
                                 </div>
                             </div>
                         )}
@@ -1235,7 +1233,6 @@ const HistoryView = ({ user, attendanceHistory, attendanceDays, gearInfo }) => {
             const userPath = ['artifacts', appId, 'users', user.uid];
             await setDoc(doc(db, ...userPath, 'data', 'attendanceHistory'), newHistory);
 
-            // 날짜가 바뀌었으면 메인 캘린더 배열(attendanceDays) 업데이트
             if (oldDateKey !== editDate) {
                 const oldD = new Date(oldDateKey.includes('-') ? oldDateKey : new Date().setDate(oldDateKey));
                 const newD = new Date(editDate);
@@ -1259,18 +1256,15 @@ const HistoryView = ({ user, attendanceHistory, attendanceDays, gearInfo }) => {
         if (!window.confirm(`${dateKey} 출석 기록을 완전히 삭제하시겠습니까? (신발 수명도 복구됩니다)`)) return;
         try {
             const newHistory = { ...attendanceHistory };
-            // 하루에 여러 암장을 갔다면 쉼표로 구분되어 있으므로 횟수를 세어 신발 수명 롤백
             const gymsCount = newHistory[dateKey].split(',').length;
             delete newHistory[dateKey];
 
             const userPath = ['artifacts', appId, 'users', user.uid];
             await setDoc(doc(db, ...userPath, 'data', 'attendanceHistory'), newHistory);
 
-            // 신발 수명(사용 횟수) 차감
             const currentUses = gearInfo.uses !== undefined ? gearInfo.uses : (gearInfo.shoeUses || 0);
             await setDoc(doc(db, ...userPath, 'data', 'gear'), { ...gearInfo, uses: Math.max(0, currentUses - gymsCount) }, { merge: true });
 
-            // 메인 달력에서 해당 일자 삭제
             const deletedD = new Date(dateKey.includes('-') ? dateKey : new Date().setDate(Number(dateKey)));
             const today = new Date();
             if (deletedD.getMonth() === today.getMonth() && deletedD.getFullYear() === today.getFullYear()) {
@@ -1308,9 +1302,15 @@ const HistoryView = ({ user, attendanceHistory, attendanceDays, gearInfo }) => {
                                             <div className="flex justify-between items-center border-b border-gray-200 pb-2 mb-2">
                                                 <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">기록 수정하기</span>
                                             </div>
-                                            <div className="grid grid-cols-3 gap-2">
-                                                <input type="date" value={editDate} onChange={e => setEditDate(e.target.value)} className="col-span-1 w-full min-w-0 bg-white p-2.5 rounded-xl border border-gray-200 text-xs font-bold outline-none focus:border-blue-400" />
-                                                <input type="text" value={editGymName} onChange={e => setEditGymName(e.target.value)} placeholder="암장명 입력" className="col-span-2 w-full min-w-0 bg-white p-2.5 rounded-xl border border-gray-200 text-xs font-bold outline-none focus:border-blue-400" />
+                                            <div className="space-y-2">
+                                                <div className="flex items-center justify-between bg-white p-3 rounded-xl border border-gray-200 shadow-sm">
+                                                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest shrink-0">날짜</label>
+                                                    <input type="date" value={editDate} onChange={e => setEditDate(e.target.value)} className="appearance-none bg-transparent outline-none text-xs font-bold text-gray-700 text-right w-32" />
+                                                </div>
+                                                <div className="flex items-center justify-between bg-white p-3 rounded-xl border border-gray-200 shadow-sm">
+                                                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest shrink-0 mr-3">암장명</label>
+                                                    <input type="text" value={editGymName} onChange={e => setEditGymName(e.target.value)} placeholder="암장명 입력" className="appearance-none bg-transparent outline-none text-xs font-bold text-gray-700 text-right w-full" />
+                                                </div>
                                             </div>
                                             <div className="flex gap-2 justify-end mt-2">
                                                 <button onClick={() => setEditingDateKey(null)} className="px-4 py-2 rounded-xl bg-gray-200 hover:bg-gray-300 text-gray-600 text-xs font-bold transition-colors">취소</button>
