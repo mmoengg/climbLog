@@ -180,8 +180,11 @@ export default function App() {
                         <nav className="space-y-1 font-semibold flex-1 text-sm">
                             <button onClick={() => { setActiveTab('home'); setIsMenuOpen(false); }} className={`w-full flex items-center gap-3 p-3 rounded-xl ${activeTab === 'home' ? 'bg-blue-50 text-blue-600 font-bold' : 'text-gray-600'}`}><Home className="w-5 h-5" /> 대시보드</button>
                             <button onClick={() => { setActiveTab('passes'); setIsMenuOpen(false); }} className={`w-full flex items-center gap-3 p-3 rounded-xl ${activeTab === 'passes' ? 'bg-blue-50 text-blue-600 font-bold' : 'text-gray-600'}`}><Ticket className="w-5 h-5" /> 이용권 & 주차 관리</button>
-                            {/* 출석 기록 메뉴 추가 */}
+
+                            {/* 출석 기록 및 퀘스트 기록 분리 */}
                             <button onClick={() => { setActiveTab('history'); setIsMenuOpen(false); }} className={`w-full flex items-center gap-3 p-3 rounded-xl ${activeTab === 'history' ? 'bg-blue-50 text-blue-600 font-bold' : 'text-gray-600'}`}><History className="w-5 h-5" /> 출석 기록</button>
+                            <button onClick={() => { setActiveTab('questHistory'); setIsMenuOpen(false); }} className={`w-full flex items-center gap-3 p-3 rounded-xl ${activeTab === 'questHistory' ? 'bg-blue-50 text-blue-600 font-bold' : 'text-gray-600'}`}><Flame className="w-5 h-5" /> 퀘스트 기록</button>
+
                             <button onClick={() => { setActiveTab('moves'); setIsMenuOpen(false); }} className={`w-full flex items-center gap-3 p-3 rounded-xl ${activeTab === 'moves' ? 'bg-blue-50 text-blue-600 font-bold' : 'text-gray-600'}`}><Trophy className="w-5 h-5" /> 무브 컬렉션</button>
                             <div className="h-[1px] bg-gray-100 my-4" />
                             <button onClick={handleSignOut} className="w-full flex items-center gap-3 p-3 rounded-xl text-rose-500 hover:bg-rose-50"><LogOut className="w-5 h-5" /> 로그아웃</button>
@@ -193,16 +196,17 @@ export default function App() {
             <header className="bg-white p-4 shadow-sm z-10 flex justify-between items-center border-b border-gray-100">
                 <button onClick={() => setIsMenuOpen(true)} className="p-2 hover:bg-gray-100 rounded-xl transition-colors"><Menu className="w-6 h-6 text-gray-600" /></button>
                 <h1 className="text-lg font-bold uppercase tracking-widest text-gray-800">
-                    {activeTab === 'home' ? 'Dashboard' : activeTab === 'record' ? 'Training' : activeTab === 'passes' ? 'Tickets' : activeTab === 'history' ? 'History' : 'Moves'}
+                    {activeTab === 'home' ? 'Dashboard' : activeTab === 'record' ? 'Training' : activeTab === 'passes' ? 'Tickets' : activeTab === 'history' ? 'History' : activeTab === 'questHistory' ? 'Quests' : 'Moves'}
                 </h1>
                 <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-xs uppercase shadow-inner">{user.email?.charAt(0)}</div>
             </header>
 
             <main className="flex-1 overflow-y-auto p-4 pb-24 bg-[#F8FAFC]">
-                {activeTab === 'home' && <HomeView user={user} attendanceDays={attendanceDays} passes={passes} shoeUses={shoeUses} quests={quests} parkingInfo={parkingInfo} uniqueGyms={uniqueGyms} />}
+                {activeTab === 'home' && <HomeView user={user} attendanceDays={attendanceDays} passes={passes} shoeUses={shoeUses} quests={quests} parkingInfo={parkingInfo} uniqueGyms={uniqueGyms} attendanceHistory={attendanceHistory} />}
                 {activeTab === 'record' && <RecordView user={user} sessions={sessions} uniqueGyms={uniqueGyms} />}
                 {activeTab === 'passes' && <PassManagementView user={user} passes={passes} uniqueBrands={uniqueBrands} uniqueGyms={uniqueGyms} parkingInfo={parkingInfo} />}
                 {activeTab === 'history' && <HistoryView attendanceHistory={attendanceHistory} />}
+                {activeTab === 'questHistory' && <div className="p-10 text-center text-gray-400 font-bold uppercase tracking-widest">Quest History syncing...</div>}
                 {activeTab === 'moves' && <MoveView moves={moves} />}
             </main>
 
@@ -257,7 +261,7 @@ const AuthScreen = () => {
 };
 
 // --- [HomeView: 출석 & 퀘스트 & 티켓 & 개별 주차장 렌더링] ---
-const HomeView = ({ user, attendanceDays, passes, shoeUses, quests, parkingInfo, uniqueGyms }) => {
+const HomeView = ({ user, attendanceDays, passes, shoeUses, quests, parkingInfo, uniqueGyms, attendanceHistory }) => {
     const today = new Date().getDate();
     const isAttendedToday = attendanceDays.includes(today);
     const lifespan = Math.max(0, 100 - shoeUses);
@@ -267,10 +271,10 @@ const HomeView = ({ user, attendanceDays, passes, shoeUses, quests, parkingInfo,
     const [customAttGym, setCustomAttGym] = useState('');
 
     const handleAttendance = async (passId, gymName = null) => {
-        if (!user || isAttendedToday) return;
+        if (!user) return; // 이미 출석했는지 여부(isAttendedToday)와 상관없이 무제한 출석 가능하도록 제한 해제!
         const userPath = ['artifacts', appId, 'users', user.uid];
 
-        // 출석 처리 (달력 배열)
+        // 출석 처리 (달력 배열에 오늘 날짜 추가. 여러 번 추가되면 총 횟수가 올라감)
         const newDays = [...attendanceDays, today];
         await setDoc(doc(db, ...userPath, 'data', 'attendance'), { days: newDays }, { merge: true });
         // 신발 수명 1 감소 (사용 1 증가)
@@ -278,7 +282,10 @@ const HomeView = ({ user, attendanceDays, passes, shoeUses, quests, parkingInfo,
 
         // 훈련 기록이나 출석 히스토리에 암장 이름 저장 (옵션)
         if (gymName && gymName.trim() !== '') {
-            await setDoc(doc(db, ...userPath, 'data', 'attendanceHistory'), { [today]: gymName }, { merge: true });
+            // 이미 오늘 기록된 암장이 있다면 쉼표로 이어서 저장 (하루에 두 탕 뛰어도 안 지워지도록)
+            const existingHistory = attendanceHistory[today];
+            const newHistoryEntry = existingHistory ? `${existingHistory}, ${gymName}` : gymName;
+            await setDoc(doc(db, ...userPath, 'data', 'attendanceHistory'), { [today]: newHistoryEntry }, { merge: true });
         }
 
         // 이용권 차감 처리
@@ -289,6 +296,7 @@ const HomeView = ({ user, attendanceDays, passes, shoeUses, quests, parkingInfo,
             }
         }
         setShowCheckInOptions(false); // 출석 완료 시 선택창 닫기
+        setCustomAttGym(''); // 입력창 초기화
     };
 
     const handleQuestClick = async (qId) => {
@@ -306,7 +314,7 @@ const HomeView = ({ user, attendanceDays, passes, shoeUses, quests, parkingInfo,
 
     return (
         <div className="space-y-5 animate-in fade-in duration-700">
-            {/* 1. 캘린더 및 직관적인 출석 버튼 (펼침 기능 및 셀렉트 제거된 직접 입력 복구) */}
+            {/* 1. 캘린더 및 직관적인 출석 버튼 (다중 출석 가능) */}
             <section className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100">
                 <div className="flex justify-between items-center mb-5">
                     <h3 className="font-bold text-gray-800 flex items-center gap-2 uppercase tracking-widest text-sm"><Calendar className="w-5 h-5 text-blue-600" /> Attendance</h3>
@@ -319,55 +327,49 @@ const HomeView = ({ user, attendanceDays, passes, shoeUses, quests, parkingInfo,
                     ))}
                 </div>
 
-                {/* 출석 버튼 영역 (토글 방식) */}
+                {/* 출석 버튼 영역 (토글 방식, 다중 출석 허용) */}
                 <div className="mt-4">
-                    {!isAttendedToday ? (
-                        !showCheckInOptions ? (
-                            <button onClick={() => setShowCheckInOptions(true)} className="w-full py-4 bg-blue-600 text-white rounded-2xl font-bold tracking-widest shadow-xl hover:bg-blue-700 transition-all uppercase flex items-center justify-center gap-2">
-                                출석 체크하기 🐾
-                            </button>
-                        ) : (
-                            <div className="space-y-3 animate-in slide-in-from-top-2 duration-300 bg-gray-50 p-4 rounded-2xl border border-gray-100">
-                                <div className="flex justify-between items-center mb-1">
-                                    <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">출석 방법 선택</span>
-                                    <button onClick={() => setShowCheckInOptions(false)} className="text-gray-400 hover:text-gray-600 p-1 bg-white rounded-full shadow-sm"><X className="w-4 h-4" /></button>
-                                </div>
+                    {!showCheckInOptions ? (
+                        <button onClick={() => setShowCheckInOptions(true)} className="w-full py-4 bg-blue-600 text-white rounded-2xl font-bold tracking-widest shadow-xl hover:bg-blue-700 transition-all uppercase flex items-center justify-center gap-2">
+                            {isAttendedToday ? '한 번 더 출석하기 🐾' : '출석 체크하기 🐾'}
+                        </button>
+                    ) : (
+                        <div className="space-y-3 animate-in slide-in-from-top-2 duration-300 bg-gray-50 p-4 rounded-2xl border border-gray-100">
+                            <div className="flex justify-between items-center mb-1">
+                                <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">출석 방법 선택</span>
+                                <button onClick={() => setShowCheckInOptions(false)} className="text-gray-400 hover:text-gray-600 p-1 bg-white rounded-full shadow-sm"><X className="w-4 h-4" /></button>
+                            </div>
 
-                                {/* 보유한 이용권 목록 */}
-                                {passes.filter(p => p.remaining > 0 || p.type === 'period').length > 0 && (
-                                    <div className="space-y-2">
-                                        {passes.filter(p => p.remaining > 0 || p.type === 'period').map(p => (
-                                            <button key={p.id} onClick={() => handleAttendance(p.id, p.gym)} className="w-full p-4 bg-white border border-blue-100 text-blue-600 rounded-xl font-bold shadow-sm hover:bg-blue-50 transition-all flex justify-between items-center">
-                                                <span className="text-sm">{p.gym} <span className="text-xs font-medium text-blue-400">({p.name})</span></span>
-                                                <span className="text-xs bg-blue-100 text-blue-600 px-3 py-1.5 rounded-lg flex items-center gap-1"><CheckCircle2 className="w-3 h-3"/> 사용</span>
-                                            </button>
-                                        ))}
-                                    </div>
-                                )}
-
-                                {/* 기본 출석 / 직접 입력 (셀렉트 박스 완전 제거) */}
-                                <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm space-y-3 mt-3">
-                                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">이용권 없이 기본 출석 (직접 입력)</p>
-                                    <div className="space-y-2">
-                                        <input
-                                            placeholder="방문한 지점명 직접 입력 (예: 더클라임 연남)"
-                                            className="w-full bg-gray-50 p-3 rounded-lg border border-gray-100 outline-none focus:ring-2 focus:ring-blue-500 text-sm font-semibold text-gray-700"
-                                            value={customAttGym}
-                                            onChange={e => setCustomAttGym(e.target.value)}
-                                        />
-                                        <button
-                                            onClick={() => handleAttendance(null, customAttGym)}
-                                            className="w-full py-3 mt-1 bg-gray-800 text-white rounded-lg font-bold text-sm shadow-md hover:bg-gray-700 transition-colors"
-                                        >
-                                            이 지점으로 출석하기
+                            {/* 보유한 이용권 목록 */}
+                            {passes.filter(p => p.remaining > 0 || p.type === 'period').length > 0 && (
+                                <div className="space-y-2">
+                                    {passes.filter(p => p.remaining > 0 || p.type === 'period').map(p => (
+                                        <button key={p.id} onClick={() => handleAttendance(p.id, p.gym)} className="w-full p-4 bg-white border border-blue-100 text-blue-600 rounded-xl font-bold shadow-sm hover:bg-blue-50 transition-all flex justify-between items-center">
+                                            <span className="text-sm">{p.gym} <span className="text-xs font-medium text-blue-400">({p.name})</span></span>
+                                            <span className="text-xs bg-blue-100 text-blue-600 px-3 py-1.5 rounded-lg flex items-center gap-1"><CheckCircle2 className="w-3 h-3"/> 사용</span>
                                         </button>
-                                    </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            {/* 기본 출석 / 직접 입력 (셀렉트 박스 완전 제거) */}
+                            <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm space-y-3 mt-3">
+                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">이용권 없이 기본 출석 (직접 입력)</p>
+                                <div className="space-y-2">
+                                    <input
+                                        placeholder="방문한 지점명 직접 입력 (예: 더클라임 연남)"
+                                        className="w-full bg-gray-50 p-3 rounded-lg border border-gray-100 outline-none focus:ring-2 focus:ring-blue-500 text-sm font-semibold text-gray-700"
+                                        value={customAttGym}
+                                        onChange={e => setCustomAttGym(e.target.value)}
+                                    />
+                                    <button
+                                        onClick={() => handleAttendance(null, customAttGym)}
+                                        className="w-full py-3 mt-1 bg-gray-800 text-white rounded-lg font-bold text-sm shadow-md hover:bg-gray-700 transition-colors"
+                                    >
+                                        이 지점으로 출석하기
+                                    </button>
                                 </div>
                             </div>
-                        )
-                    ) : (
-                        <div className="w-full py-4 bg-gray-100 text-gray-400 rounded-2xl font-bold uppercase tracking-widest text-center border border-gray-200">
-                            오늘의 출석 완료 🎉
                         </div>
                     )}
                 </div>
