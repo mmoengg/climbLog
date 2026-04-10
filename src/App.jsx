@@ -206,7 +206,7 @@ export default function App() {
                 {activeTab === 'record' && <RecordView user={user} sessions={sessions} uniqueGyms={uniqueGyms} />}
                 {activeTab === 'passes' && <PassManagementView user={user} passes={passes} uniqueBrands={uniqueBrands} uniqueGyms={uniqueGyms} parkingInfo={parkingInfo} />}
                 {activeTab === 'history' && <HistoryView attendanceHistory={attendanceHistory} />}
-                {activeTab === 'questHistory' && <div className="p-10 text-center text-gray-400 font-bold uppercase tracking-widest">Quest History syncing...</div>}
+                {activeTab === 'questHistory' && <QuestHistoryView quests={quests} />}
                 {activeTab === 'moves' && <MoveView moves={moves} />}
             </main>
 
@@ -491,6 +491,63 @@ const HistoryView = ({ attendanceHistory }) => {
                     ) : (
                         <div className="text-center py-10 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
                             <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">출석 기록이 없습니다</p>
+                        </div>
+                    )}
+                </div>
+            </section>
+        </div>
+    );
+};
+
+// --- [QuestHistoryView: 퀘스트 진행 상황 및 달성 이력 렌더링 (메인 데이터 연동)] ---
+const QuestHistoryView = ({ quests }) => {
+    // 완료된 퀘스트 개수를 계산합니다.
+    const completedCount = quests.filter(q => q.current === q.goal).length;
+
+    const getQuestIcon = (name) => {
+        if (name === 'Wind') return <Wind className="w-5 h-5" />;
+        if (name === 'Activity') return <Activity className="w-5 h-5" />;
+        return <Smile className="w-5 h-5" />;
+    };
+
+    return (
+        <div className="space-y-5 animate-in fade-in pb-10">
+            <section className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
+                <div className="flex justify-between items-center mb-6">
+                    <h3 className="font-bold text-gray-800 text-sm flex items-center gap-2 uppercase tracking-widest">
+                        <Flame className="w-5 h-5 text-orange-500" /> Quest History
+                    </h3>
+                    {/* 달성 현황 대시보드 추가 */}
+                    <span className="text-[10px] font-bold text-orange-600 bg-orange-50 px-3 py-1.5 rounded-full border border-orange-100">
+            {completedCount} / {quests.length} 완료
+          </span>
+                </div>
+
+                <div className="space-y-3">
+                    {quests.length > 0 ? (
+                        quests.map(q => (
+                            <div key={q.id} className={`flex justify-between items-center p-4 rounded-2xl border transition-all ${q.current === q.goal ? 'bg-orange-50 border-orange-200' : 'bg-gray-50 border-gray-100'}`}>
+                                <div className="flex items-center gap-3">
+                                    <div className={`p-2.5 rounded-xl text-white shadow-sm ${q.current === q.goal ? q.color : 'bg-gray-300'}`}>
+                                        {q.current === q.goal ? <CheckCircle2 className="w-5 h-5" /> : getQuestIcon(q.icon)}
+                                    </div>
+                                    <div>
+                                        <h4 className={`text-sm font-bold ${q.current === q.goal ? 'text-gray-900' : 'text-gray-600'}`}>{q.title}</h4>
+                                        <p className="text-[10px] text-gray-400 font-bold mt-0.5 tracking-widest">진행도: {q.current} / {q.goal}</p>
+                                    </div>
+                                </div>
+
+                                {/* 진행도를 막대 그래프로 시각화하여 표현 */}
+                                <div className="flex gap-1">
+                                    {Array.from({ length: q.goal }).map((_, i) => (
+                                        <div key={i} className={`w-2.5 h-6 rounded-sm ${i < q.current ? (q.current === q.goal ? 'bg-orange-400' : 'bg-blue-400') : 'bg-gray-200'}`} />
+                                    ))}
+                                </div>
+                            </div>
+                        ))
+                    ) : (
+                        <div className="text-center py-10 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+                            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">진행 중인 퀘스트가 없습니다</p>
                         </div>
                     )}
                 </div>
