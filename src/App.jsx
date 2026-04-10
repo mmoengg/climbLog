@@ -205,7 +205,7 @@ export default function App() {
     if (!user) return <AuthScreen />;
 
     return (
-        <div className="flex flex-col h-screen bg-gray-50 text-gray-800 font-sans max-w-md mx-auto border shadow-lg relative overflow-hidden text-left">
+        <div className="flex flex-col h-screen bg-gray-50 text-gray-800 font-sans max-w-md mx-auto shadow-lg relative overflow-hidden text-left">
 
             {/* Sidebar Menu */}
             <div className={`fixed inset-0 z-50 transition-all duration-300 ${isMenuOpen ? 'visible' : 'invisible'}`}>
@@ -245,7 +245,7 @@ export default function App() {
                 {activeTab === 'moves' && <MoveView moves={moves} />}
             </main>
 
-            <nav className="bg-white border-t flex justify-around p-2 pb-5 fixed bottom-0 w-full max-w-md shadow-2xl">
+            <nav className="bg-white flex justify-around p-2 pb-5 fixed bottom-0 w-full max-w-md shadow-2xl">
                 <NavItem icon={<Home />} label="HOME" isActive={activeTab === 'home'} onClick={() => setActiveTab('home')} />
                 <NavItem icon={<Ticket />} label="TICKETS" isActive={activeTab === 'passes'} onClick={() => setActiveTab('passes')} />
                 <NavItem icon={<PenSquare />} label="TRAINING" isActive={activeTab === 'record'} onClick={() => setActiveTab('record')} />
