@@ -66,7 +66,6 @@ const GYM_LEVELS = {
     "기타": ["Level 1", "Level 2", "Level 3", "Level 4", "Level 5", "Level 6", "Level 7"]
 };
 
-// 레벨 색상 시각화를 위한 꼬리표
 const LEVEL_COLORS = {
     "하양": "bg-gray-100 text-gray-800 border-gray-200",
     "흰색": "bg-gray-100 text-gray-800 border-gray-200",
@@ -100,7 +99,7 @@ export default function App() {
 
     // 데이터 상태
     const [attendanceDays, setAttendanceDays] = useState([]);
-    const [shoeUses, setShoeUses] = useState(0);
+    const [gearInfo, setGearInfo] = useState({}); // 신발 등록 및 관리 상태
     const [passes, setPasses] = useState([]);
     const [quests, setQuests] = useState([]);
     const [moves, setMoves] = useState([]);
@@ -108,7 +107,7 @@ export default function App() {
     const [parkingInfo, setParkingInfo] = useState({});
     const [attendanceHistory, setAttendanceHistory] = useState({});
     const [questHistory, setQuestHistory] = useState({});
-    const [expenses, setExpenses] = useState([]); // [추가됨] 가계부 데이터
+    const [expenses, setExpenses] = useState([]);
 
     useEffect(() => {
         if (!auth) { setLoading(false); return; }
@@ -163,7 +162,10 @@ export default function App() {
             setSessions(s.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)));
         });
 
-        const unsubGear = onSnapshot(doc(db, ...userPath, 'data', 'gear'), (docSnap) => setShoeUses(docSnap.data()?.shoeUses || 0));
+        // 신발(Gear) 상태 가져오기
+        const unsubGear = onSnapshot(doc(db, ...userPath, 'data', 'gear'), (docSnap) => {
+            setGearInfo(docSnap.data() || { name: '기본 암벽화', uses: 0, max: 100 });
+        });
 
         const unsubParking = onSnapshot(doc(db, ...userPath, 'data', 'parking'), (docSnap) => {
             setParkingInfo(docSnap.data() || {});
@@ -177,10 +179,8 @@ export default function App() {
             setQuestHistory(docSnap.data() || {});
         });
 
-        // [추가됨] 가계부 데이터 동기화
         const unsubExpenses = onSnapshot(collection(db, ...userPath, 'expenses'), (snapshot) => {
             const exp = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-            // 날짜순 내림차순(최신순) 정렬
             setExpenses(exp.sort((a, b) => b.date.localeCompare(a.date) || (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)));
         });
 
@@ -245,7 +245,7 @@ export default function App() {
             </header>
 
             <main className="flex-1 overflow-y-auto p-4 pb-24 bg-[#F8FAFC]">
-                {activeTab === 'home' && <HomeView user={user} attendanceDays={attendanceDays} passes={passes} shoeUses={shoeUses} quests={quests} attendanceHistory={attendanceHistory} questHistory={questHistory} uniqueGyms={uniqueGyms} />}
+                {activeTab === 'home' && <HomeView user={user} attendanceDays={attendanceDays} passes={passes} gearInfo={gearInfo} quests={quests} attendanceHistory={attendanceHistory} questHistory={questHistory} uniqueGyms={uniqueGyms} />}
                 {activeTab === 'expenses' && <ExpenseView user={user} expenses={expenses} />}
                 {activeTab === 'record' && <RecordView user={user} sessions={sessions} uniqueGyms={uniqueGyms} />}
                 {activeTab === 'passes' && <PassManagementView user={user} passes={passes} uniqueBrands={uniqueBrands} uniqueGyms={uniqueGyms} parkingInfo={parkingInfo} />}
@@ -254,7 +254,6 @@ export default function App() {
                 {activeTab === 'moves' && <MoveView moves={moves} />}
             </main>
 
-            {/* 하단 탭 메뉴 4개로 조정 */}
             <nav className="bg-white border-t flex justify-around p-2 pb-5 fixed bottom-0 w-full max-w-md shadow-2xl">
                 <NavItem icon={<Home />} label="HOME" isActive={activeTab === 'home'} onClick={() => setActiveTab('home')} />
                 <NavItem icon={<Wallet />} label="WALLET" isActive={activeTab === 'expenses'} onClick={() => setActiveTab('expenses')} />
@@ -315,19 +314,17 @@ const ExpenseView = ({ user, expenses }) => {
     const [memo, setMemo] = useState('');
     const [saving, setSaving] = useState(false);
 
-    // 날짜 계산 헬퍼 함수들
     const getStartOfWeek = (d) => {
         const date = new Date(d);
         const day = date.getDay();
-        const diff = date.getDate() - day + (day === 0 ? -6 : 1); // 월요일 기준
+        const diff = date.getDate() - day + (day === 0 ? -6 : 1);
         return new Date(date.setDate(diff)).toISOString().split('T')[0];
     };
 
     const todayStr = new Date().toISOString().split('T')[0];
-    const currentMonthStr = todayStr.substring(0, 7); // YYYY-MM
+    const currentMonthStr = todayStr.substring(0, 7);
     const startOfWeekStr = getStartOfWeek(new Date());
 
-    // 통계 데이터 계산 (일간, 주간, 월간, 총계)
     const stats = useMemo(() => {
         let daily = 0, weekly = 0, monthly = 0, total = 0;
 
@@ -342,7 +339,6 @@ const ExpenseView = ({ user, expenses }) => {
         return { daily, weekly, monthly, total };
     }, [expenses, todayStr, currentMonthStr, startOfWeekStr]);
 
-    // 카테고리별 색상 뱃지
     const CATEGORY_STYLE = {
         "입장권": "bg-blue-100 text-blue-700",
         "주차비": "bg-gray-200 text-gray-700",
@@ -378,7 +374,6 @@ const ExpenseView = ({ user, expenses }) => {
 
     return (
         <div className="space-y-6 animate-in fade-in pb-10">
-            {/* 1. 가계부 4단 통계 대시보드 */}
             <section className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100">
                 <h3 className="font-bold text-gray-800 text-sm flex items-center gap-2 uppercase tracking-widest mb-4">
                     <PieChart className="w-5 h-5 text-blue-600" /> Expense Summary
@@ -403,7 +398,6 @@ const ExpenseView = ({ user, expenses }) => {
                 </div>
             </section>
 
-            {/* 2. 지출 기록 추가 폼 */}
             <section className="bg-white p-5 rounded-3xl border-2 border-dashed border-gray-200 transition-all hover:bg-gray-50/50">
                 <button onClick={() => setShowAddForm(!showAddForm)} className="w-full flex items-center justify-between font-bold text-gray-700 uppercase tracking-widest text-sm">
                     <span className="flex items-center gap-2"><Plus className="w-5 h-5" /> 새 지출 기록하기</span>
@@ -430,7 +424,6 @@ const ExpenseView = ({ user, expenses }) => {
                 )}
             </section>
 
-            {/* 3. 최근 지출 리스트 */}
             <div className="space-y-3">
                 <h3 className="text-[10px] text-gray-400 uppercase font-bold px-2 tracking-widest pt-2">Recent Expenses</h3>
                 {expenses.map(e => (
@@ -460,30 +453,45 @@ const ExpenseView = ({ user, expenses }) => {
 };
 
 // --- [HomeView] ---
-const HomeView = ({ user, attendanceDays, passes, shoeUses, quests, attendanceHistory, questHistory, uniqueGyms }) => {
+const HomeView = ({ user, attendanceDays, passes, gearInfo, quests, attendanceHistory, questHistory, uniqueGyms }) => {
     const today = new Date().getDate();
     const isAttendedToday = attendanceDays.includes(today);
-    const lifespan = Math.max(0, 100 - shoeUses);
+
+    // 신발 정보 파싱 및 수명 계산
+    const currentUses = gearInfo.uses !== undefined ? gearInfo.uses : (gearInfo.shoeUses || 0);
+    const maxUses = gearInfo.max || 100;
+    const shoeName = gearInfo.name || '기본 암벽화';
+    const lifespanPercent = Math.max(0, 100 - Math.round((currentUses / maxUses) * 100));
 
     const [showCheckInOptions, setShowCheckInOptions] = useState(false);
     const [customAttGym, setCustomAttGym] = useState('');
+    const [attendanceDate, setAttendanceDate] = useState(new Date().toISOString().split('T')[0]);
+
+    // 신발 등록 폼 상태
+    const [showShoeForm, setShowShoeForm] = useState(false);
+    const [shoeNameInput, setShoeNameInput] = useState('');
+    const [shoeMaxInput, setShoeMaxInput] = useState(100);
+
+    // [추가] 총 누적 출석 횟수 계산 (전체 히스토리 기록 수)
+    const totalVisits = Object.keys(attendanceHistory).length;
 
     const urgentPasses = useMemo(() => {
         return [...passes].sort((a, b) => a.dDay - b.dDay);
     }, [passes]);
 
     const handleAttendance = async (passId, gymName = null) => {
-        if (!user) return;
+        if (!user || !attendanceDate) return;
         const userPath = ['artifacts', appId, 'users', user.uid];
 
-        const newDays = [...attendanceDays, today];
+        const selectedDay = new Date(attendanceDate).getDate();
+        const newDays = Array.from(new Set([...attendanceDays, selectedDay]));
+
         await setDoc(doc(db, ...userPath, 'data', 'attendance'), { days: newDays }, { merge: true });
-        await setDoc(doc(db, ...userPath, 'data', 'gear'), { shoeUses: shoeUses + 1 }, { merge: true });
+        // 신발 사용 횟수 +1 증가
+        await setDoc(doc(db, ...userPath, 'data', 'gear'), { ...gearInfo, uses: currentUses + 1 }, { merge: true });
 
         const finalGymName = (gymName && gymName.trim() !== '') ? gymName.trim() : '기본 출석';
-
-        const now = new Date();
-        const dateKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+        const dateKey = attendanceDate;
 
         const existingHistory = attendanceHistory[dateKey];
         const newHistoryEntry = existingHistory ? `${existingHistory}, ${finalGymName}` : finalGymName;
@@ -497,6 +505,7 @@ const HomeView = ({ user, attendanceDays, passes, shoeUses, quests, attendanceHi
         }
         setShowCheckInOptions(false);
         setCustomAttGym('');
+        setAttendanceDate(new Date().toISOString().split('T')[0]);
     };
 
     const handleQuestClick = async (qId) => {
@@ -521,6 +530,23 @@ const HomeView = ({ user, attendanceDays, passes, shoeUses, quests, attendanceHi
         }
     };
 
+    // 새 암벽화 등록 처리
+    const handleRegisterShoe = async (e) => {
+        e.preventDefault();
+        if (!user || !shoeNameInput) return;
+        const userPath = ['artifacts', appId, 'users', user.uid];
+
+        await setDoc(doc(db, ...userPath, 'data', 'gear'), {
+            name: shoeNameInput,
+            uses: 0,
+            max: Number(shoeMaxInput)
+        }, { merge: true });
+
+        setShowShoeForm(false);
+        setShoeNameInput('');
+        setShoeMaxInput(100);
+    };
+
     const getQuestIcon = (name) => {
         if (name === 'Wind') return <Wind className="w-5 h-5" />;
         if (name === 'Activity') return <Activity className="w-5 h-5" />;
@@ -533,7 +559,12 @@ const HomeView = ({ user, attendanceDays, passes, shoeUses, quests, attendanceHi
             <section className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100">
                 <div className="flex justify-between items-center mb-5">
                     <h3 className="font-bold text-gray-800 flex items-center gap-2 uppercase tracking-widest text-sm"><Calendar className="w-5 h-5 text-blue-600" /> Attendance</h3>
-                    <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded-full">{attendanceDays.length}회 출석</span>
+
+                    {/* [추가됨] 총 누적 출석 횟수와 이번 달 출석 횟수 동시 표기 */}
+                    <div className="flex gap-1.5 items-center">
+                        <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-md">이번 달 {attendanceDays.length}회</span>
+                        <span className="text-[10px] font-bold text-white bg-blue-600 px-2.5 py-1 rounded-md shadow-sm">총 누적 {totalVisits}회</span>
+                    </div>
                 </div>
                 <div className="grid grid-cols-7 gap-1 text-center text-[10px] mb-6 font-bold text-gray-400">
                     {['S','M','T','W','T','F','S'].map(d => <div key={d}>{d}</div>)}
@@ -545,13 +576,23 @@ const HomeView = ({ user, attendanceDays, passes, shoeUses, quests, attendanceHi
                 <div className="mt-4">
                     {!showCheckInOptions ? (
                         <button onClick={() => setShowCheckInOptions(true)} className="w-full py-4 bg-blue-600 text-white rounded-2xl font-bold tracking-widest shadow-xl hover:bg-blue-700 transition-all uppercase flex items-center justify-center gap-2">
-                            {isAttendedToday ? '한 번 더 출석하기 🐾' : '출석 체크하기 🐾'}
+                            출석 체크하기 🐾
                         </button>
                     ) : (
                         <div className="space-y-3 animate-in slide-in-from-top-2 duration-300 bg-gray-50 p-4 rounded-2xl border border-gray-100">
-                            <div className="flex justify-between items-center mb-1">
-                                <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">출석 방법 선택</span>
-                                <button onClick={() => setShowCheckInOptions(false)} className="text-gray-400 hover:text-gray-600 p-1 bg-white rounded-full shadow-sm"><X className="w-4 h-4" /></button>
+                            <div className="flex justify-between items-center mb-3">
+                                <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">출석 날짜 및 방법 선택</span>
+                                <button onClick={() => { setShowCheckInOptions(false); setAttendanceDate(new Date().toISOString().split('T')[0]); }} className="text-gray-400 hover:text-gray-600 p-1 bg-white rounded-full shadow-sm"><X className="w-4 h-4" /></button>
+                            </div>
+
+                            <div className="bg-white p-3 rounded-xl border border-gray-200 mb-3 shadow-sm flex items-center justify-between">
+                                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">출석 날짜</label>
+                                <input
+                                    type="date"
+                                    className="bg-gray-50 border border-gray-100 outline-none focus:ring-2 focus:ring-blue-500 text-xs font-bold text-gray-700 px-3 py-1.5 rounded-lg"
+                                    value={attendanceDate}
+                                    onChange={e => setAttendanceDate(e.target.value)}
+                                />
                             </div>
 
                             {passes.filter(p => p.remaining > 0 || p.type === 'period').length > 0 && (
@@ -650,13 +691,57 @@ const HomeView = ({ user, attendanceDays, passes, shoeUses, quests, attendanceHi
                 )}
             </div>
 
-            {/* 5. 신발 수명 */}
-            <section className="bg-white p-5 rounded-3xl border border-gray-100 flex items-center justify-between shadow-sm">
-                <div className="flex items-center gap-4">
-                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center font-black text-lg border-2 ${lifespan < 30 ? 'bg-rose-50 border-rose-200 text-rose-600' : 'bg-blue-50 border-blue-200 text-blue-600'}`}>{lifespan}%</div>
-                    <div><h4 className="font-bold text-sm uppercase text-gray-800">Gear Life</h4><p className="text-[10px] text-gray-400 font-semibold uppercase tracking-widest mt-0.5">Shoe: {shoeUses}/100 Climbs</p></div>
-                </div>
-                <ChevronRight className="text-gray-300 w-5 h-5" />
+            {/* 5. 암벽화 수명 관리 및 등록 기능 추가 */}
+            <section className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm">
+                {!showShoeForm ? (
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center font-black text-lg border-2 ${lifespanPercent < 30 ? 'bg-rose-50 border-rose-200 text-rose-600' : 'bg-blue-50 border-blue-200 text-blue-600'}`}>
+                                {lifespanPercent}%
+                            </div>
+                            <div>
+                                <h4 className="font-bold text-sm text-gray-800 flex items-center gap-1">
+                                    {shoeName}
+                                </h4>
+                                <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-widest mt-0.5">
+                                    수명: {currentUses} / {maxUses} Climbs
+                                </p>
+                            </div>
+                        </div>
+                        {/* 우측 연필 아이콘 클릭 시 신발 등록 모드로 전환 */}
+                        <button onClick={() => setShowShoeForm(true)} className="p-2.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors border border-gray-100">
+                            <Edit className="w-4 h-4" />
+                        </button>
+                    </div>
+                ) : (
+                    <form onSubmit={handleRegisterShoe} className="space-y-3 animate-in fade-in slide-in-from-right-4">
+                        <div className="flex justify-between items-center mb-2 border-b border-gray-100 pb-2">
+                            <h4 className="text-xs font-bold text-gray-800 uppercase tracking-widest flex items-center gap-2"><Footprints className="w-4 h-4 text-blue-600"/> 새 암벽화 등록</h4>
+                            <button type="button" onClick={() => setShowShoeForm(false)} className="text-gray-400 hover:text-gray-600 p-1"><X className="w-4 h-4" /></button>
+                        </div>
+                        <input
+                            placeholder="암벽화 이름 (예: VSR, 드론)"
+                            className="w-full bg-gray-50 p-3 rounded-xl border border-gray-100 outline-none focus:ring-2 focus:ring-blue-500 text-sm font-semibold text-gray-800"
+                            value={shoeNameInput}
+                            onChange={e => setShoeNameInput(e.target.value)}
+                            required
+                        />
+                        <div className="flex items-center gap-3 bg-gray-50 p-3 rounded-xl border border-gray-100">
+                            <label className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">예상 수명(출석 횟수)</label>
+                            <input
+                                type="number"
+                                className="bg-white p-2 rounded-lg border border-gray-200 outline-none focus:ring-2 focus:ring-blue-500 text-sm font-bold w-20 text-center ml-auto shadow-sm"
+                                value={shoeMaxInput}
+                                onChange={e => setShoeMaxInput(e.target.value)}
+                                min="1"
+                                required
+                            />
+                        </div>
+                        <button type="submit" className="w-full py-3 bg-gray-900 text-white rounded-xl font-bold text-xs tracking-widest uppercase shadow-md hover:bg-gray-800 transition-colors">
+                            등록하고 사용 횟수 0으로 초기화
+                        </button>
+                    </form>
+                )}
             </section>
         </div>
     );
