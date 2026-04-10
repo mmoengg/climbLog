@@ -21,7 +21,7 @@ import {
 import {
     Calendar, BookOpen, PenSquare, Home, Award, ChevronRight,
     CheckCircle2, MapPin, Search, Video, PlayCircle, Users,
-    Activity, Ticket, Menu, X, Settings, LogOut, Edit3, Clock, Flame, Target, TrendingUp, Car, AlertCircle, Plus, MessageSquare, Sticker, Smile, Wind, History, Trophy, Footprints, Hand, ShieldCheck, Zap, ChevronDown, Loader2, Mail, Lock, Trash2
+    Activity, Ticket, Menu, X, Settings, LogOut, Edit3, Clock, Flame, Target, TrendingUp, Car, AlertCircle, Plus, MessageSquare, Sticker, Smile, Wind, History, Trophy, Footprints, Hand, ShieldCheck, Zap, ChevronDown, Loader2, Mail, Lock, Trash2, CalendarDays, Edit
 } from 'lucide-react';
 
 // --- [Firebase 설정] ---
@@ -65,7 +65,6 @@ const GYM_LEVELS = {
     "기타": ["Level 1", "Level 2", "Level 3", "Level 4", "Level 5", "Level 6", "Level 7"]
 };
 
-// 암장 이름에 포함된 단어를 바탕으로 레벨 시스템을 자동으로 찾아주는 함수
 const getLevelsForGym = (gymName) => {
     if (!gymName) return GYM_LEVELS["기타"];
     if (gymName.includes("더클라임")) return GYM_LEVELS["더클라임"];
@@ -91,7 +90,7 @@ export default function App() {
     const [sessions, setSessions] = useState([]);
     const [parkingInfo, setParkingInfo] = useState({});
     const [attendanceHistory, setAttendanceHistory] = useState({});
-    const [questHistory, setQuestHistory] = useState({}); // 퀘스트 히스토리 상태 추가
+    const [questHistory, setQuestHistory] = useState({});
 
     useEffect(() => {
         if (!auth) { setLoading(false); return; }
@@ -107,7 +106,23 @@ export default function App() {
         const userPath = ['artifacts', appId, 'users', user.uid];
 
         const unsubAttendance = onSnapshot(doc(db, ...userPath, 'data', 'attendance'), (docSnap) => setAttendanceDays(docSnap.data()?.days || []));
-        const unsubPasses = onSnapshot(collection(db, ...userPath, 'passes'), (snapshot) => setPasses(snapshot.docs.map(d => ({ id: d.id, ...d.data() }))));
+
+        // 티켓 데이터를 가져올 때, 실시간으로 오늘 날짜 기준 D-Day를 정확히 계산하여 덮어씌웁니다.
+        const unsubPasses = onSnapshot(collection(db, ...userPath, 'passes'), (snapshot) => {
+            const today = new Date();
+            today.setHours(0,0,0,0);
+
+            const loadedPasses = snapshot.docs.map(d => {
+                const data = d.data();
+                let calculatedDDay = data.dDay || 0;
+                if (data.end) {
+                    const endDate = new Date(data.end);
+                    calculatedDDay = Math.ceil((endDate - today) / (1000 * 60 * 60 * 24));
+                }
+                return { id: d.id, ...data, dDay: calculatedDDay };
+            });
+            setPasses(loadedPasses);
+        });
 
         const unsubQuests = onSnapshot(doc(db, ...userPath, 'data', 'quests'), (docSnap) => {
             if (docSnap.exists()) setQuests(docSnap.data()?.list || []);
@@ -141,7 +156,6 @@ export default function App() {
             setAttendanceHistory(docSnap.data() || {});
         });
 
-        // 퀘스트 히스토리 동기화 추가
         const unsubQuestHistory = onSnapshot(doc(db, ...userPath, 'data', 'questHistory'), (docSnap) => {
             setQuestHistory(docSnap.data() || {});
         });
@@ -206,7 +220,7 @@ export default function App() {
             </header>
 
             <main className="flex-1 overflow-y-auto p-4 pb-24 bg-[#F8FAFC]">
-                {activeTab === 'home' && <HomeView user={user} attendanceDays={attendanceDays} passes={passes} shoeUses={shoeUses} quests={quests} parkingInfo={parkingInfo} uniqueGyms={uniqueGyms} attendanceHistory={attendanceHistory} questHistory={questHistory} />}
+                {activeTab === 'home' && <HomeView user={user} attendanceDays={attendanceDays} passes={passes} shoeUses={shoeUses} quests={quests} attendanceHistory={attendanceHistory} questHistory={questHistory} />}
                 {activeTab === 'record' && <RecordView user={user} sessions={sessions} uniqueGyms={uniqueGyms} />}
                 {activeTab === 'passes' && <PassManagementView user={user} passes={passes} uniqueBrands={uniqueBrands} uniqueGyms={uniqueGyms} parkingInfo={parkingInfo} />}
                 {activeTab === 'history' && <HistoryView attendanceHistory={attendanceHistory} />}
@@ -264,15 +278,19 @@ const AuthScreen = () => {
     );
 };
 
-// --- [HomeView] ---
-// 수정: questHistory를 props로 정상적으로 받도록 추가했습니다.
-const HomeView = ({ user, attendanceDays, passes, shoeUses, quests, parkingInfo, uniqueGyms, attendanceHistory, questHistory }) => {
+// --- [HomeView: 대시보드 - 시급성(dDay) 순 정렬 반영] ---
+const HomeView = ({ user, attendanceDays, passes, shoeUses, quests, attendanceHistory, questHistory }) => {
     const today = new Date().getDate();
     const isAttendedToday = attendanceDays.includes(today);
     const lifespan = Math.max(0, 100 - shoeUses);
 
     const [showCheckInOptions, setShowCheckInOptions] = useState(false);
     const [customAttGym, setCustomAttGym] = useState('');
+
+    // 1. 대시보드에서는 시급한(dDay가 적은) 티켓 순서대로 보여줍니다.
+    const urgentPasses = useMemo(() => {
+        return [...passes].sort((a, b) => a.dDay - b.dDay);
+    }, [passes]);
 
     const handleAttendance = async (passId, gymName = null) => {
         if (!user) return;
@@ -312,7 +330,6 @@ const HomeView = ({ user, attendanceDays, passes, shoeUses, quests, parkingInfo,
         const newQuests = quests.map(q => q.id === qId ? { ...q, current: newCurrent } : q);
         await setDoc(doc(db, ...userPath, 'data', 'quests'), { list: newQuests }, { merge: true });
 
-        // 퀘스트 완료 시 날짜와 함께 히스토리에 기록 (이제 questHistory 데이터를 정상적으로 읽을 수 있습니다)
         if (quest.current < quest.goal && newCurrent === quest.goal) {
             const now = new Date();
             const dateKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
@@ -417,17 +434,19 @@ const HomeView = ({ user, attendanceDays, passes, shoeUses, quests, parkingInfo,
                 </div>
             </section>
 
-            {/* 3. 이용권 지갑 */}
+            {/* 3. 이용권 지갑 (메인 화면에서는 간략하게 표시) */}
             <div className="flex gap-3 overflow-x-auto pb-4 scrollbar-hide px-1">
-                {passes.map(p => (
+                {urgentPasses.map(p => (
                     <div key={p.id} className={`min-w-[270px] p-5 rounded-3xl border transition-all relative overflow-hidden ${p.type === 'period' ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'bg-white border-gray-100 shadow-sm'}`}>
                         <Ticket className={`absolute -right-4 -bottom-4 w-24 h-24 ${p.type === 'period' ? 'opacity-10 text-white' : 'opacity-5 text-gray-900'}`} />
                         <div className="flex justify-between items-start mb-4">
                             <span className={`text-[10px] px-2 py-1 rounded-full font-bold uppercase tracking-wider ${p.type === 'period' ? 'bg-white/20' : 'bg-gray-100 text-gray-600'}`}>{p.name}</span>
-                            <div className={`text-xs font-black ${p.type === 'period' ? 'text-blue-100' : 'text-blue-600'}`}>D-{p.dDay}</div>
+                            <div className={`text-xs font-black ${p.dDay < 7 ? 'text-rose-500 animate-pulse' : (p.type === 'period' ? 'text-blue-100' : 'text-blue-600')}`}>D-{p.dDay}</div>
                         </div>
                         <h4 className="font-bold text-lg uppercase mb-2 tracking-tight">{p.gym}</h4>
-                        <p className={`text-[10px] font-semibold tracking-wide ${p.type === 'period' ? 'text-blue-200' : 'text-gray-400'}`}>브랜드 전용 이용권</p>
+                        <p className={`text-[10px] font-semibold tracking-wide flex items-center gap-1 ${p.type === 'period' ? 'text-blue-200' : 'text-gray-400'}`}>
+                            <CalendarDays className="w-3 h-3" /> {p.end} 까지
+                        </p>
 
                         {p.type === 'punch' && (
                             <div className="mt-5 space-y-2">
@@ -446,28 +465,10 @@ const HomeView = ({ user, attendanceDays, passes, shoeUses, quests, parkingInfo,
                 {passes.length === 0 && (
                     <div className="min-w-full p-8 bg-gray-50 rounded-3xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center text-center shadow-inner">
                         <Ticket className="w-8 h-8 text-gray-300 mb-3" />
-                        <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">등록된 브랜드 이용권이 없습니다</p>
-                        <p className="text-[10px] text-gray-400 mt-1.5 font-medium">하단 'TICKETS' 탭에서 브랜드 이용권을 등록해주세요.</p>
+                        <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">등록된 이용권이 없습니다</p>
                     </div>
                 )}
             </div>
-
-            {/* 4. 지점별 개별 주차장 리스트 */}
-            {Object.keys(parkingInfo).length > 0 && (
-                <section className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100">
-                    <h3 className="font-bold text-gray-800 text-sm flex items-center gap-2 uppercase tracking-widest mb-4">
-                        <Car className="w-5 h-5 text-blue-500" /> Branch Parking Info
-                    </h3>
-                    <div className="space-y-2">
-                        {Object.entries(parkingInfo).map(([gymName, info]) => (
-                            <div key={gymName} className="flex justify-between items-center bg-gray-50 p-3.5 rounded-2xl border border-gray-100">
-                                <span className="text-xs font-bold text-gray-800">{gymName}</span>
-                                <span className="text-[10px] font-semibold text-gray-500 bg-white px-3 py-1.5 rounded-xl border border-gray-200 shadow-sm">{info}</span>
-                            </div>
-                        ))}
-                    </div>
-                </section>
-            )}
 
             {/* 5. 신발 수명 */}
             <section className="bg-white p-5 rounded-3xl border border-gray-100 flex items-center justify-between shadow-sm">
@@ -477,6 +478,262 @@ const HomeView = ({ user, attendanceDays, passes, shoeUses, quests, parkingInfo,
                 </div>
                 <ChevronRight className="text-gray-300 w-5 h-5" />
             </section>
+        </div>
+    );
+};
+
+// --- [PassManagementView: 티켓 종합 관리소 (수정/삭제/자동네이밍 및 유효기간 설정)] ---
+const PassManagementView = ({ user, passes, uniqueBrands, uniqueGyms, parkingInfo }) => {
+    const [selectedBrand, setSelectedBrand] = useState(uniqueBrands[0] || '');
+    const [customBrand, setCustomBrand] = useState('');
+
+    // 티켓 종류, 기간, 횟수
+    const [type, setType] = useState('punch'); // 'punch' or 'period'
+    const [total, setTotal] = useState(10); // 횟수권용
+    const [months, setMonths] = useState(1); // 기간권용
+
+    // [추가] 구매일과 만료일(유효기간) 상태 추가
+    const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
+    const [endDate, setEndDate] = useState('');
+
+    const [savingPass, setSavingPass] = useState(false);
+
+    // 주차 정보 폼 상태
+    const [selectedParkGym, setSelectedParkGym] = useState(uniqueGyms[0] || '');
+    const [customParkGym, setCustomParkGym] = useState('');
+    const [parkingMemo, setParkingMemo] = useState('');
+    const [savingPark, setSavingPark] = useState(false);
+
+    // 날짜 자동 계산 이펙트
+    useEffect(() => {
+        if (startDate) {
+            const d = new Date(startDate);
+            if (type === 'period') {
+                d.setMonth(d.getMonth() + months);
+            } else {
+                // 횟수권의 경우 기본적으로 6개월로 만료일을 추천해줌 (수정 가능)
+                d.setMonth(d.getMonth() + 6);
+            }
+            setEndDate(d.toISOString().split('T')[0]);
+        }
+    }, [startDate, months, type]);
+
+    const resetForm = () => {
+        setSelectedBrand(uniqueBrands[0]);
+        setCustomBrand('');
+        setType('punch');
+        setTotal(10);
+        setMonths(1);
+        setStartDate(new Date().toISOString().split('T')[0]);
+        // endDate는 useEffect가 자동으로 다시 계산해줍니다.
+    };
+
+    const handleAddPass = async (e) => {
+        e.preventDefault();
+        const finalBrandName = selectedBrand === 'manual' ? customBrand.trim() : selectedBrand;
+        if (!user || !finalBrandName || !startDate || !endDate) return;
+        setSavingPass(true);
+
+        // 사용자가 선택한 종류와 숫자를 바탕으로 이름 자동 생성
+        const autoGeneratedName = type === 'punch' ? `${total}회권` : `${months}개월권`;
+
+        try {
+            await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'passes'), {
+                gym: finalBrandName,
+                name: autoGeneratedName,
+                type,
+                start: startDate, // DB에 구매일/시작일 저장
+                end: endDate,     // DB에 유효기간/만료일 저장
+                total: type === 'punch' ? Number(total) : null,
+                remaining: type === 'punch' ? Number(total) : null,
+                dDay: 0 // 이건 HomeView에서 렌더링될 때 end 날짜를 기준으로 다시 계산됨
+            });
+            resetForm();
+        } catch (err) { console.error(err); }
+        finally { setSavingPass(false); }
+    };
+
+    const handleDeletePass = async (id) => {
+        if (!window.confirm('이용권을 삭제하시겠습니까?')) return;
+        await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'passes', id));
+    };
+
+    const handleSaveParking = async (e) => {
+        e.preventDefault();
+        const finalParkGym = selectedParkGym === 'manual' ? customParkGym.trim() : selectedParkGym;
+        if (!user || !finalParkGym || !parkingMemo) return;
+        setSavingPark(true);
+        try {
+            const newParking = { ...parkingInfo, [finalParkGym]: parkingMemo };
+            await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'data', 'parking'), newParking, { merge: true });
+            setCustomParkGym(''); setParkingMemo(''); setSelectedParkGym(uniqueGyms[0]);
+        } catch (err) { console.error(err); }
+        finally { setSavingPark(false); }
+    };
+
+    const handleDeleteParking = async (gymToDelete) => {
+        if (!window.confirm('이 지점의 주차 정보를 삭제할까요?')) return;
+        const newParking = { ...parkingInfo };
+        delete newParking[gymToDelete];
+        await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'data', 'parking'), newParking);
+    };
+
+    return (
+        <div className="space-y-8 animate-in fade-in pb-10">
+
+            {/* 섹션 1: 종합 티켓 등록 폼 (자동 네이밍 및 유효기간 반영) */}
+            <section className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
+                <div className="flex justify-between items-center mb-6">
+                    <h3 className="text-sm font-bold text-gray-800 uppercase tracking-widest flex items-center gap-2">
+                        <Ticket className="w-5 h-5 text-gray-800" />
+                        1. 티켓 등록 관리
+                    </h3>
+                </div>
+
+                <form onSubmit={handleAddPass} className="space-y-4">
+                    {/* 1. 브랜드 선택 */}
+                    <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-1">브랜드 선택</label>
+                        <select value={selectedBrand} onChange={e => setSelectedBrand(e.target.value)} className="w-full bg-gray-50 p-3.5 rounded-xl border border-gray-100 outline-none focus:ring-2 focus:ring-blue-500 text-sm font-semibold text-gray-800">
+                            {uniqueBrands.map(b => <option key={b} value={b}>{b}</option>)}
+                            <option value="manual">직접 입력 (+)</option>
+                        </select>
+                    </div>
+                    {selectedBrand === 'manual' && (
+                        <input placeholder="새로운 브랜드명 (예: 알레)" className="w-full bg-gray-50 p-3.5 rounded-xl border border-gray-100 outline-none focus:ring-2 focus:ring-blue-500 text-sm font-semibold text-gray-800 animate-in slide-in-from-top-2" value={customBrand} onChange={e => setCustomBrand(e.target.value)} required />
+                    )}
+
+                    <div className="space-y-3">
+                        <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-1">이용권 종류</label>
+                            <select value={type} onChange={e => setType(e.target.value)} className="w-full bg-gray-50 p-3.5 rounded-xl border border-gray-100 outline-none focus:ring-2 focus:ring-blue-500 text-sm font-semibold text-gray-800">
+                                <option value="punch">횟수권</option>
+                                <option value="period">기간권</option>
+                            </select>
+                        </div>
+
+                        {/* 티켓 종류에 따른 옵션 및 날짜 설정 */}
+                        {type === 'punch' ? (
+                            <div className="space-y-3 bg-orange-50/50 p-4 rounded-2xl border border-orange-100">
+                                <div className="flex items-center justify-between mb-2">
+                                    <label className="text-xs text-orange-800 font-bold uppercase tracking-widest">전체 횟수 설정</label>
+                                    <select value={total} onChange={e => setTotal(Number(e.target.value))} className="bg-white p-2 rounded-lg border border-orange-200 outline-none focus:ring-2 focus:ring-orange-500 text-xs font-bold text-orange-700 shadow-sm">
+                                        <option value={5}>5회</option>
+                                        <option value={10}>10회</option>
+                                        <option value={15}>15회</option>
+                                        <option value={20}>20회</option>
+                                        <option value={30}>30회</option>
+                                    </select>
+                                </div>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label className="text-[9px] text-gray-500 font-bold uppercase tracking-widest mb-1 block">구매일</label>
+                                        <input type="date" className="w-full bg-white p-3 rounded-xl border border-orange-200 text-xs font-bold text-gray-700" value={startDate} onChange={e => setStartDate(e.target.value)} required />
+                                    </div>
+                                    <div>
+                                        <label className="text-[9px] text-rose-500 font-bold uppercase tracking-widest mb-1 block">유효기간 (만료일)</label>
+                                        <input type="date" className="w-full bg-white p-3 rounded-xl border border-rose-200 text-xs font-bold text-rose-700" value={endDate} onChange={e => setEndDate(e.target.value)} required />
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="space-y-3 bg-blue-50/50 p-4 rounded-2xl border border-blue-100">
+                                <div className="flex items-center justify-between mb-2">
+                                    <label className="text-xs text-blue-800 font-bold uppercase tracking-widest">기간 설정</label>
+                                    <select value={months} onChange={e => setMonths(Number(e.target.value))} className="bg-white p-2 rounded-lg border border-blue-200 outline-none focus:ring-2 focus:ring-blue-500 text-xs font-bold text-blue-700 shadow-sm">
+                                        <option value={1}>1개월</option>
+                                        <option value={3}>3개월</option>
+                                        <option value={6}>6개월</option>
+                                        <option value={12}>12개월</option>
+                                    </select>
+                                </div>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label className="text-[9px] text-gray-500 font-bold uppercase tracking-widest mb-1 block">시작일</label>
+                                        <input type="date" className="w-full bg-white p-3 rounded-xl border border-blue-200 text-xs font-bold text-gray-700" value={startDate} onChange={e => setStartDate(e.target.value)} required />
+                                    </div>
+                                    <div>
+                                        <label className="text-[9px] text-rose-500 font-bold uppercase tracking-widest mb-1 block">만료일 (자동계산)</label>
+                                        <input type="date" className="w-full bg-white p-3 rounded-xl border border-rose-200 text-xs font-bold text-rose-700" value={endDate} onChange={e => setEndDate(e.target.value)} required />
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    <button disabled={savingPass} className={`w-full py-4 mt-2 text-white rounded-2xl font-bold uppercase tracking-widest shadow-xl transition-all disabled:opacity-50 bg-gray-900 hover:bg-gray-800`}>
+                        {savingPass ? '처리 중...' : 'REGISTER TICKET 💳'}
+                    </button>
+                </form>
+
+                {/* 등록된 전체 티켓 리스트 (날짜 포함) */}
+                <div className="mt-8 space-y-3">
+                    <h3 className="text-[10px] text-gray-400 uppercase font-bold px-2 tracking-widest mb-3 border-t border-gray-100 pt-6">All Registered Tickets</h3>
+                    {passes.map(p => (
+                        <div key={p.id} className={`p-4 rounded-2xl border flex justify-between items-center transition-all bg-gray-50 border-gray-100`}>
+                            <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-1">
+                                    <span className={`text-[9px] px-2 py-0.5 rounded-md font-bold uppercase ${p.type === 'period' ? 'bg-blue-100 text-blue-600' : 'bg-orange-100 text-orange-600'}`}>{p.type === 'period' ? '기간권' : '횟수권'}</span>
+                                    <h4 className="text-sm font-bold text-gray-800">{p.gym}</h4>
+                                </div>
+                                <p className="text-[11px] text-gray-800 font-bold mt-1.5 flex items-center gap-1">
+                                    {p.name} {p.type === 'punch' && <span className="text-orange-500 ml-1">({p.remaining}회 남음)</span>}
+                                </p>
+                                {p.start && p.end && (
+                                    <p className="text-[10px] text-gray-500 mt-1 flex items-center gap-1">
+                                        <CalendarDays className="w-3 h-3" /> {p.start} ~ <span className="text-rose-500 font-bold">{p.end}</span>
+                                    </p>
+                                )}
+                            </div>
+                            <div className="flex flex-col gap-2">
+                                <button onClick={() => handleDeletePass(p.id)} className="text-gray-400 hover:text-rose-500 bg-white p-2 rounded-xl shadow-sm border border-gray-100 transition-colors"><Trash2 className="w-4 h-4" /></button>
+                            </div>
+                        </div>
+                    ))}
+                    {passes.length === 0 && <p className="text-center text-xs text-gray-400 py-6 border border-dashed border-gray-200 rounded-xl bg-gray-50/50">등록된 이용권이 없습니다.</p>}
+                </div>
+            </section>
+
+            {/* 섹션 2: 주차 정보(지점 단위) 개별 등록 폼 */}
+            <section className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
+                <h3 className="text-sm font-bold text-gray-800 uppercase tracking-widest mb-6 flex items-center gap-2">
+                    <Car className="w-5 h-5 text-blue-600" /> 2. 지점별 주차장 관리
+                </h3>
+                <form onSubmit={handleSaveParking} className="space-y-4">
+                    <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-1">방문하는 지점 선택</label>
+                        <select value={selectedParkGym} onChange={e => setSelectedParkGym(e.target.value)} className="w-full bg-gray-50 p-3.5 rounded-xl border border-gray-100 outline-none focus:ring-2 focus:ring-blue-500 text-sm font-semibold text-gray-800">
+                            {uniqueGyms.map(g => <option key={g} value={g}>{g}</option>)}
+                            <option value="manual">직접 입력 (+)</option>
+                        </select>
+                    </div>
+                    {selectedParkGym === 'manual' && (
+                        <input placeholder="새로운 지점명 입력 (예: 더클라임 신림)" className="w-full bg-gray-50 p-3.5 rounded-xl border border-gray-100 outline-none focus:ring-2 focus:ring-blue-500 text-sm font-semibold text-gray-800 animate-in slide-in-from-top-2" value={customParkGym} onChange={e => setCustomParkGym(e.target.value)} required />
+                    )}
+
+                    <input placeholder="해당 지점의 주차 조건 (예: 건물 지하 불가)" className="w-full bg-gray-50 p-3.5 rounded-xl border border-gray-100 outline-none focus:ring-2 focus:ring-blue-500 text-sm font-semibold text-gray-800" value={parkingMemo} onChange={e => setParkingMemo(e.target.value)} required />
+
+                    <button disabled={savingPark} className="w-full py-4 mt-2 bg-blue-600 text-white rounded-2xl font-bold uppercase tracking-widest shadow-xl shadow-blue-200 hover:bg-blue-700 transition-colors disabled:opacity-50">
+                        {savingPark ? '저장 중...' : 'SAVE PARKING INFO 🚗'}
+                    </button>
+                </form>
+
+                {/* 등록된 주차 정보 리스트 */}
+                <div className="mt-6 space-y-2">
+                    <h3 className="text-[10px] text-gray-400 uppercase font-bold px-2 tracking-widest mb-3 border-t border-gray-100 pt-6">Saved Parking Infos</h3>
+                    {Object.entries(parkingInfo).map(([gymName, info]) => (
+                        <div key={gymName} className="bg-gray-50 p-4 rounded-2xl border border-gray-100 flex justify-between items-center">
+                            <div>
+                                <h4 className="text-sm font-bold text-gray-800">{gymName}</h4>
+                                <p className="text-[11px] text-blue-600 font-bold mt-0.5">{info}</p>
+                            </div>
+                            <button onClick={() => handleDeleteParking(gymName)} className="text-gray-400 hover:text-rose-500 hover:bg-white p-2 rounded-xl transition-colors shadow-sm"><Trash2 className="w-4 h-4" /></button>
+                        </div>
+                    ))}
+                    {Object.keys(parkingInfo).length === 0 && <p className="text-center text-xs text-gray-400 py-6 border border-dashed border-gray-200 rounded-xl bg-gray-50/50">저장된 주차 정보가 없습니다.</p>}
+                </div>
+            </section>
+
         </div>
     );
 };
@@ -728,166 +985,6 @@ const RecordView = ({ user, sessions, uniqueGyms }) => {
                     </div>
                 )}
             </div>
-        </div>
-    );
-};
-
-// --- [PassManagementView: 이용권(브랜드) + 주차(지점) 완전 분리 관리] ---
-const PassManagementView = ({ user, passes, uniqueBrands, uniqueGyms, parkingInfo }) => {
-    // 1. 이용권 폼 상태
-    const [selectedBrand, setSelectedBrand] = useState(uniqueBrands[0] || '');
-    const [customBrand, setCustomBrand] = useState('');
-    const [name, setName] = useState('10회권');
-    const [total, setTotal] = useState(10);
-    const [type, setType] = useState('punch');
-    const [savingPass, setSavingPass] = useState(false);
-
-    // 2. 주차 정보 폼 상태
-    const [selectedParkGym, setSelectedParkGym] = useState(uniqueGyms[0] || '');
-    const [customParkGym, setCustomParkGym] = useState('');
-    const [parkingMemo, setParkingMemo] = useState('');
-    const [savingPark, setSavingPark] = useState(false);
-
-    const handleAddPass = async (e) => {
-        e.preventDefault();
-        const finalBrandName = selectedBrand === 'manual' ? customBrand.trim() : selectedBrand;
-        if (!user || !finalBrandName) return;
-        setSavingPass(true);
-        try {
-            await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'passes'), {
-                gym: finalBrandName, // 브랜드명으로 사용
-                name,
-                total: Number(total),
-                remaining: type === 'punch' ? Number(total) : 0,
-                type,
-                dDay: 30,
-                end: '2026-12-31'
-            });
-            setCustomBrand(''); setName(''); setSelectedBrand(uniqueBrands[0]);
-        } catch (err) { console.error(err); }
-        finally { setSavingPass(false); }
-    };
-
-    const handleDeletePass = async (id) => {
-        if (!window.confirm('이용권을 삭제하시겠습니까?')) return;
-        await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'passes', id));
-    };
-
-    const handleSaveParking = async (e) => {
-        e.preventDefault();
-        const finalParkGym = selectedParkGym === 'manual' ? customParkGym.trim() : selectedParkGym;
-        if (!user || !finalParkGym || !parkingMemo) return;
-        setSavingPark(true);
-        try {
-            const newParking = { ...parkingInfo, [finalParkGym]: parkingMemo };
-            await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'data', 'parking'), newParking, { merge: true });
-            setCustomParkGym(''); setParkingMemo(''); setSelectedParkGym(uniqueGyms[0]);
-        } catch (err) { console.error(err); }
-        finally { setSavingPark(false); }
-    };
-
-    const handleDeleteParking = async (gymToDelete) => {
-        if (!window.confirm('이 지점의 주차 정보를 삭제할까요?')) return;
-        const newParking = { ...parkingInfo };
-        delete newParking[gymToDelete];
-        await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'data', 'parking'), newParking);
-    };
-
-    return (
-        <div className="space-y-8 animate-in fade-in pb-10">
-
-            {/* 섹션 1: 이용권(브랜드 단위) 등록 폼 */}
-            <section className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
-                <h3 className="text-sm font-bold text-gray-800 uppercase tracking-widest mb-6 flex items-center gap-2">
-                    <Ticket className="w-5 h-5 text-blue-600" /> 1. 브랜드 이용권 등록
-                </h3>
-                <form onSubmit={handleAddPass} className="space-y-4">
-                    <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-1">브랜드 선택 (공통 사용)</label>
-                        <select value={selectedBrand} onChange={e => setSelectedBrand(e.target.value)} className="w-full bg-gray-50 p-3.5 rounded-xl border border-gray-100 outline-none focus:ring-2 focus:ring-blue-500 text-sm font-semibold text-gray-800">
-                            {uniqueBrands.map(b => <option key={b} value={b}>{b}</option>)}
-                            <option value="manual">직접 입력 (+)</option>
-                        </select>
-                    </div>
-                    {selectedBrand === 'manual' && (
-                        <input placeholder="새로운 브랜드명 입력 (예: 알레)" className="w-full bg-gray-50 p-3.5 rounded-xl border border-gray-100 outline-none focus:ring-2 focus:ring-blue-500 text-sm font-semibold text-gray-800 animate-in slide-in-from-top-2" value={customBrand} onChange={e => setCustomBrand(e.target.value)} required />
-                    )}
-
-                    <div className="grid grid-cols-2 gap-3">
-                        <input placeholder="이용권 이름 (예: 10회권)" className="w-full bg-gray-50 p-3.5 rounded-xl border border-gray-100 outline-none focus:ring-2 focus:ring-blue-500 text-sm font-semibold text-gray-800" value={name} onChange={e => setName(e.target.value)} required />
-                        <select value={type} onChange={e => setType(e.target.value)} className="w-full bg-gray-50 p-3.5 rounded-xl border border-gray-100 outline-none focus:ring-2 focus:ring-blue-500 text-sm font-semibold text-gray-800">
-                            <option value="punch">횟수권</option>
-                            <option value="period">기간권</option>
-                        </select>
-                    </div>
-
-                    {type === 'punch' && (
-                        <div className="flex items-center gap-3 bg-gray-50 p-3.5 rounded-xl border border-gray-100">
-                            <label className="text-xs text-gray-500 font-bold uppercase tracking-widest">전체 횟수</label>
-                            <input type="number" className="bg-white p-2 rounded-lg border border-gray-200 outline-none focus:ring-2 focus:ring-blue-500 text-sm font-bold w-20 text-center ml-auto shadow-sm" value={total} onChange={e => setTotal(e.target.value)} min="1" />
-                        </div>
-                    )}
-                    <button disabled={savingPass} className="w-full py-4 mt-2 bg-gray-900 text-white rounded-2xl font-bold uppercase tracking-widest shadow-xl hover:bg-gray-800 transition-colors disabled:opacity-50">
-                        {savingPass ? '등록 중...' : 'REGISTER TICKET 💳'}
-                    </button>
-                </form>
-
-                {/* 등록된 이용권 리스트 */}
-                <div className="mt-6 space-y-2">
-                    <h3 className="text-[10px] text-gray-400 uppercase font-bold px-2 tracking-widest mb-3">Active Brand Tickets</h3>
-                    {passes.map(p => (
-                        <div key={p.id} className="bg-gray-50 p-4 rounded-2xl border border-gray-100 flex justify-between items-center">
-                            <div>
-                                <h4 className="text-sm font-bold text-gray-800">{p.gym}</h4>
-                                <p className="text-[11px] text-gray-500 font-medium mt-0.5">{p.name} · {p.type === 'punch' ? `${p.remaining}회 남음` : '기간권'}</p>
-                            </div>
-                            <button onClick={() => handleDeletePass(p.id)} className="text-gray-400 hover:text-rose-500 hover:bg-white p-2 rounded-xl transition-colors"><Trash2 className="w-4 h-4" /></button>
-                        </div>
-                    ))}
-                    {passes.length === 0 && <p className="text-center text-xs text-gray-400 py-4 border border-dashed border-gray-200 rounded-xl">등록된 이용권이 없습니다.</p>}
-                </div>
-            </section>
-
-            {/* 섹션 2: 주차 정보(지점 단위) 개별 등록 폼 */}
-            <section className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
-                <h3 className="text-sm font-bold text-gray-800 uppercase tracking-widest mb-6 flex items-center gap-2">
-                    <Car className="w-5 h-5 text-blue-600" /> 2. 지점별 주차장 등록
-                </h3>
-                <form onSubmit={handleSaveParking} className="space-y-4">
-                    <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-1">방문하는 지점 선택</label>
-                        <select value={selectedParkGym} onChange={e => setSelectedParkGym(e.target.value)} className="w-full bg-gray-50 p-3.5 rounded-xl border border-gray-100 outline-none focus:ring-2 focus:ring-blue-500 text-sm font-semibold text-gray-800">
-                            {uniqueGyms.map(g => <option key={g} value={g}>{g}</option>)}
-                            <option value="manual">직접 입력 (+)</option>
-                        </select>
-                    </div>
-                    {selectedParkGym === 'manual' && (
-                        <input placeholder="새로운 지점명 입력 (예: 더클라임 신림)" className="w-full bg-gray-50 p-3.5 rounded-xl border border-gray-100 outline-none focus:ring-2 focus:ring-blue-500 text-sm font-semibold text-gray-800 animate-in slide-in-from-top-2" value={customParkGym} onChange={e => setCustomParkGym(e.target.value)} required />
-                    )}
-
-                    <input placeholder="해당 지점의 주차 조건 (예: 건물 지하 불가)" className="w-full bg-gray-50 p-3.5 rounded-xl border border-gray-100 outline-none focus:ring-2 focus:ring-blue-500 text-sm font-semibold text-gray-800" value={parkingMemo} onChange={e => setParkingMemo(e.target.value)} required />
-
-                    <button disabled={savingPark} className="w-full py-4 mt-2 bg-blue-600 text-white rounded-2xl font-bold uppercase tracking-widest shadow-xl shadow-blue-200 hover:bg-blue-700 transition-colors disabled:opacity-50">
-                        {savingPark ? '저장 중...' : 'SAVE PARKING INFO 🚗'}
-                    </button>
-                </form>
-
-                {/* 등록된 주차 정보 리스트 */}
-                <div className="mt-6 space-y-2">
-                    <h3 className="text-[10px] text-gray-400 uppercase font-bold px-2 tracking-widest mb-3">Saved Parking Infos</h3>
-                    {Object.entries(parkingInfo).map(([gymName, info]) => (
-                        <div key={gymName} className="bg-gray-50 p-4 rounded-2xl border border-gray-100 flex justify-between items-center">
-                            <div>
-                                <h4 className="text-sm font-bold text-gray-800">{gymName}</h4>
-                                <p className="text-[11px] text-blue-600 font-bold mt-0.5">{info}</p>
-                            </div>
-                            <button onClick={() => handleDeleteParking(gymName)} className="text-gray-400 hover:text-rose-500 hover:bg-white p-2 rounded-xl transition-colors"><Trash2 className="w-4 h-4" /></button>
-                        </div>
-                    ))}
-                    {Object.keys(parkingInfo).length === 0 && <p className="text-center text-xs text-gray-400 py-4 border border-dashed border-gray-200 rounded-xl">저장된 주차 정보가 없습니다.</p>}
-                </div>
-            </section>
-
         </div>
     );
 };
