@@ -56,13 +56,29 @@ const NavItem = ({ icon, label, isActive, onClick }) => (
     </button>
 );
 
-// --- [암장별 레벨 데이터] ---
+// --- [암장별 레벨 데이터 & 색상 맵핑] ---
 const GYM_LEVELS = {
     "더클라임": ["하양", "노랑", "주황", "초록", "파랑", "빨강", "보라", "회색", "갈색", "검정"],
     "서울숲": ["하양", "노랑", "초록", "파랑", "빨강", "보라", "회색", "검정"],
     "피커스": ["하양", "노랑", "주황", "초록", "파랑", "빨강", "보라", "검정"],
     "클라이밍파크": ["하양", "노랑", "초록", "파랑", "빨강", "보라", "회색", "검정"],
+    "손상원": ["노랑", "초록", "파랑", "빨강", "보라", "회색", "검정", "흰색"],
     "기타": ["Level 1", "Level 2", "Level 3", "Level 4", "Level 5", "Level 6", "Level 7"]
+};
+
+// 레벨 색상 시각화를 위한 꼬리표
+const LEVEL_COLORS = {
+    "하양": "bg-gray-100 text-gray-800 border-gray-200",
+    "흰색": "bg-gray-100 text-gray-800 border-gray-200",
+    "노랑": "bg-yellow-300 text-yellow-900 border-yellow-400",
+    "주황": "bg-orange-400 text-white border-orange-500",
+    "초록": "bg-green-500 text-white border-green-600",
+    "파랑": "bg-blue-500 text-white border-blue-600",
+    "빨강": "bg-red-500 text-white border-red-600",
+    "보라": "bg-purple-600 text-white border-purple-700",
+    "회색": "bg-gray-500 text-white border-gray-600",
+    "갈색": "bg-amber-800 text-white border-amber-900",
+    "검정": "bg-gray-900 text-white border-black"
 };
 
 const getLevelsForGym = (gymName) => {
@@ -71,6 +87,7 @@ const getLevelsForGym = (gymName) => {
     if (gymName.includes("서울숲")) return GYM_LEVELS["서울숲"];
     if (gymName.includes("피커스")) return GYM_LEVELS["피커스"];
     if (gymName.includes("클라이밍파크") || gymName.includes("클파")) return GYM_LEVELS["클라이밍파크"];
+    if (gymName.includes("손상원")) return GYM_LEVELS["손상원"];
     return GYM_LEVELS["기타"];
 };
 
@@ -107,7 +124,6 @@ export default function App() {
 
         const unsubAttendance = onSnapshot(doc(db, ...userPath, 'data', 'attendance'), (docSnap) => setAttendanceDays(docSnap.data()?.days || []));
 
-        // 티켓 데이터를 가져올 때, 실시간으로 오늘 날짜 기준 D-Day를 정확히 계산하여 덮어씌웁니다.
         const unsubPasses = onSnapshot(collection(db, ...userPath, 'passes'), (snapshot) => {
             const today = new Date();
             today.setHours(0,0,0,0);
@@ -143,6 +159,7 @@ export default function App() {
 
         const unsubSessions = onSnapshot(collection(db, ...userPath, 'sessions'), (snapshot) => {
             const s = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+            // 작성순서(시간) 기반으로 내림차순 정렬 (최신이 맨 위)
             setSessions(s.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)));
         });
 
@@ -164,13 +181,13 @@ export default function App() {
     }, [user]);
 
     const uniqueBrands = useMemo(() => {
-        const baseBrands = ["더클라임", "서울숲", "피커스", "클라이밍파크", "알레"];
+        const baseBrands = ["더클라임", "서울숲", "피커스", "클라이밍파크", "손상원", "알레"];
         const passBrands = passes.map(p => p.gym);
         return Array.from(new Set([...baseBrands, ...passBrands])).sort();
     }, [passes]);
 
     const uniqueGyms = useMemo(() => {
-        const baseGyms = ["더클라임 신림", "더클라임 문래", "더클라임 홍대", "서울숲 구로", "피커스 종로"];
+        const baseGyms = ["더클라임 신림", "더클라임 문래", "서울숲 구로", "피커스 종로", "손상원 강남"];
         const sessionGyms = sessions.map(s => s.gymName);
         const parkingGyms = Object.keys(parkingInfo);
         return Array.from(new Set([...baseGyms, ...sessionGyms, ...parkingGyms])).sort();
@@ -220,7 +237,7 @@ export default function App() {
             </header>
 
             <main className="flex-1 overflow-y-auto p-4 pb-24 bg-[#F8FAFC]">
-                {activeTab === 'home' && <HomeView user={user} attendanceDays={attendanceDays} passes={passes} shoeUses={shoeUses} quests={quests} attendanceHistory={attendanceHistory} questHistory={questHistory} />}
+                {activeTab === 'home' && <HomeView user={user} attendanceDays={attendanceDays} passes={passes} shoeUses={shoeUses} quests={quests} attendanceHistory={attendanceHistory} questHistory={questHistory} uniqueGyms={uniqueGyms} />}
                 {activeTab === 'record' && <RecordView user={user} sessions={sessions} uniqueGyms={uniqueGyms} />}
                 {activeTab === 'passes' && <PassManagementView user={user} passes={passes} uniqueBrands={uniqueBrands} uniqueGyms={uniqueGyms} parkingInfo={parkingInfo} />}
                 {activeTab === 'history' && <HistoryView attendanceHistory={attendanceHistory} />}
@@ -278,8 +295,8 @@ const AuthScreen = () => {
     );
 };
 
-// --- [HomeView: 대시보드 - 시급성(dDay) 순 정렬 반영] ---
-const HomeView = ({ user, attendanceDays, passes, shoeUses, quests, attendanceHistory, questHistory }) => {
+// --- [HomeView] ---
+const HomeView = ({ user, attendanceDays, passes, shoeUses, quests, attendanceHistory, questHistory, uniqueGyms }) => {
     const today = new Date().getDate();
     const isAttendedToday = attendanceDays.includes(today);
     const lifespan = Math.max(0, 100 - shoeUses);
@@ -287,7 +304,6 @@ const HomeView = ({ user, attendanceDays, passes, shoeUses, quests, attendanceHi
     const [showCheckInOptions, setShowCheckInOptions] = useState(false);
     const [customAttGym, setCustomAttGym] = useState('');
 
-    // 1. 대시보드에서는 시급한(dDay가 적은) 티켓 순서대로 보여줍니다.
     const urgentPasses = useMemo(() => {
         return [...passes].sort((a, b) => a.dDay - b.dDay);
     }, [passes]);
@@ -482,7 +498,240 @@ const HomeView = ({ user, attendanceDays, passes, shoeUses, quests, attendanceHi
     );
 };
 
-// --- [PassManagementView: 티켓 종합 관리소 (수정/삭제/자동네이밍 및 유효기간 설정)] ---
+// --- [RecordView: 브랜드별 맞춤형 데이터 대시보드] ---
+const RecordView = ({ user, sessions, uniqueGyms }) => {
+    const [showAddForm, setShowAddForm] = useState(false);
+    const [selectedGym, setSelectedGym] = useState(uniqueGyms[0] || '');
+    const [customGym, setCustomGym] = useState('');
+    const [newLevel, setNewLevel] = useState('');
+    const [newSummary, setNewSummary] = useState('');
+    const [saving, setSaving] = useState(false);
+
+    // [수정 포인트] 1. 차트를 필터링할 '브랜드' 상태 추가 (기본값: 제일 많이 간 곳 또는 첫 번째 브랜드)
+    const sessionBrands = useMemo(() => {
+        const brands = sessions.map(s => s.gymName.split(' ')[0]);
+        return Array.from(new Set(brands));
+    }, [sessions]);
+
+    const [chartBrandFilter, setChartBrandFilter] = useState('더클라임');
+
+    useEffect(() => {
+        if (sessionBrands.length > 0 && !sessionBrands.includes(chartBrandFilter)) {
+            setChartBrandFilter(sessionBrands[0]);
+        }
+    }, [sessionBrands]);
+
+    const finalGymName = selectedGym === 'manual' ? customGym.trim() : selectedGym;
+    const currentGymLevels = getLevelsForGym(finalGymName);
+
+    // 암장 브랜드별 최고 기록 추출
+    const highestRecords = useMemo(() => {
+        const records = {};
+        sessions.forEach(s => {
+            const brand = s.gymName.split(' ')[0];
+            const levels = getLevelsForGym(s.gymName);
+            const idx = levels.indexOf(s.topLevel);
+
+            if (!records[brand] || records[brand].idx < idx) {
+                records[brand] = { level: s.topLevel, idx, date: s.date, fullGymName: s.gymName };
+            }
+        });
+        return Object.entries(records).sort((a, b) => b[1].idx - a[1].idx);
+    }, [sessions]);
+
+    // [수정 포인트] 2. 필터링된 브랜드에 완벽히 맞춰진 차트 데이터 계산
+    const chartData = useMemo(() => {
+        // 선택된 브랜드의 데이터만 필터링하여 최신 7개 추출
+        const filteredSessions = [...sessions]
+            .filter(s => s.gymName.startsWith(chartBrandFilter))
+            .sort((a, b) => (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0))
+            .slice(-7);
+
+        if (filteredSessions.length === 0) return null;
+
+        // 선택된 브랜드의 고유 레벨 시스템(Y축) 가져오기
+        const levels = getLevelsForGym(chartBrandFilter);
+        const height = 150;
+        const yStep = height / Math.max(1, levels.length - 1);
+        const xStep = filteredSessions.length > 1 ? 260 / (filteredSessions.length - 1) : 0;
+
+        return {
+            levels,
+            yStep,
+            points: filteredSessions.map((s, i) => {
+                const idx = levels.indexOf(s.topLevel);
+                const safeIdx = idx !== -1 ? idx : 0;
+                return {
+                    x: filteredSessions.length === 1 ? 170 : 50 + (i * xStep),
+                    y: height - (safeIdx * yStep),
+                    val: s.topLevel,
+                    // 날짜에서 '월 일'만 추출 (예: 4월 10일 -> 4/10)
+                    date: s.date.replace(/[^0-9]/g, '').slice(-4).replace(/(\d{2})(\d{2})/, '$1/$2')
+                };
+            })
+        };
+    }, [sessions, chartBrandFilter]);
+
+    const handleSave = async (e) => {
+        e.preventDefault();
+        if (!user || !newLevel || !finalGymName) return;
+        setSaving(true);
+        try {
+            const now = new Date();
+            const yyyymmdd = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+            await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'sessions'), {
+                gymName: finalGymName,
+                topLevel: newLevel,
+                summary: newSummary,
+                date: yyyymmdd,
+                createdAt: serverTimestamp()
+            });
+            setShowAddForm(false);
+            setNewSummary('');
+            setCustomGym('');
+            setNewLevel('');
+        } catch (err) { console.error(err); }
+        finally { setSaving(false); }
+    };
+
+    return (
+        <div className="space-y-6 animate-in fade-in pb-10">
+
+            {/* 1. 암장별 최고 기록 뱃지 */}
+            <section className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100">
+                <h3 className="font-bold text-gray-800 text-sm flex items-center gap-2 uppercase tracking-widest mb-4">
+                    <Trophy className="w-5 h-5 text-amber-500" /> Best Records per Gym
+                </h3>
+                {highestRecords.length > 0 ? (
+                    <div className="grid grid-cols-2 gap-3">
+                        {highestRecords.map(([brand, data]) => (
+                            <div key={brand} className={`p-3 rounded-2xl border flex flex-col justify-center items-center shadow-sm ${LEVEL_COLORS[data.level] || 'bg-gray-50 text-gray-800 border-gray-200'}`}>
+                                <span className="text-[10px] opacity-80 font-bold mb-1 tracking-widest">{brand}</span>
+                                <span className="text-lg font-black">{data.level}</span>
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <p className="text-center py-6 text-gray-400 text-xs font-medium bg-gray-50 rounded-2xl">기록된 데이터가 없습니다.</p>
+                )}
+            </section>
+
+            {/* 2. 브랜드 맞춤형 기간별 성장 흐름 차트 */}
+            <section className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100">
+                <div className="flex justify-between items-center mb-4">
+                    <h3 className="font-bold text-gray-800 text-sm flex items-center gap-2 uppercase tracking-widest">
+                        <TrendingUp className="w-5 h-5 text-blue-600" /> Growth Chart
+                    </h3>
+                    {/* [수정 포인트] 3. 브랜드 선택 드롭다운 */}
+                    {sessionBrands.length > 0 && (
+                        <select
+                            value={chartBrandFilter}
+                            onChange={(e) => setChartBrandFilter(e.target.value)}
+                            className="text-xs font-bold text-blue-700 bg-blue-50 border-none outline-none rounded-lg px-2 py-1 cursor-pointer"
+                        >
+                            {sessionBrands.map(b => <option key={b} value={b}>{b}</option>)}
+                        </select>
+                    )}
+                </div>
+
+                <div className="w-full bg-gray-50 rounded-2xl p-4 overflow-x-auto scrollbar-hide border border-gray-100/50">
+                    {chartData ? (
+                        <svg width="320" height="190" className="mx-auto overflow-visible">
+                            {/* [수정 포인트] 4. 선택된 브랜드의 레벨(Y축) 라벨과 가이드 라인 동적 생성 */}
+                            {chartData.levels.map((lv, i) => {
+                                const yPos = 150 - i * chartData.yStep;
+                                // 너무 조밀해지지 않도록, 짝수번째나 특정 조건에서만 선/글씨를 보여줄 수 있지만,
+                                // ESFJ를 위해 모든 난이도를 정확하게 표시합니다.
+                                return (
+                                    <g key={lv}>
+                                        <text x="40" y={yPos + 3} textAnchor="end" className="text-[8px] fill-gray-500 font-bold">{lv}</text>
+                                        <line x1="45" y1={yPos} x2="310" y2={yPos} stroke="#E2E8F0" strokeWidth="1" strokeDasharray="2 2" />
+                                    </g>
+                                );
+                            })}
+
+                            {/* 꺾은선 그리기 */}
+                            {chartData.points.length > 1 && (
+                                <path d={`M ${chartData.points[0].x} ${chartData.points[0].y} ${chartData.points.map(p => `L ${p.x} ${p.y}`).join(' ')}`} fill="none" stroke="#2563EB" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                            )}
+
+                            {/* 데이터 점과 날짜 라벨 */}
+                            {chartData.points.map((p, i) => (
+                                <g key={i}>
+                                    <circle cx={p.x} cy={p.y} r="4" fill="#2563EB" stroke="white" strokeWidth="1.5" />
+                                    <text x={p.x} y={165} textAnchor="middle" className="text-[8px] fill-gray-400 font-bold">{p.date}</text>
+                                </g>
+                            ))}
+                        </svg>
+                    ) : (
+                        <div className="text-center py-8">
+                            <p className="text-gray-400 text-xs font-medium">[{chartBrandFilter}]의 기록이 없거나 부족합니다.</p>
+                            <p className="text-gray-300 text-[10px] mt-1">성장 흐름을 보려면 최소 1회 이상의 기록이 필요해요.</p>
+                        </div>
+                    )}
+                </div>
+            </section>
+
+            {/* 3. 하이라이트 다중 기록 폼 */}
+            <section className="bg-white p-5 rounded-3xl border-2 border-dashed border-blue-200 transition-all hover:bg-blue-50/50">
+                <button onClick={() => setShowAddForm(!showAddForm)} className="w-full flex items-center justify-between font-bold text-blue-600 uppercase tracking-widest text-sm">
+                    <span className="flex items-center gap-2"><Plus className="w-5 h-5" /> 새 하이라이트 추가하기</span>
+                    <ChevronDown className={`transition-transform duration-300 ${showAddForm ? 'rotate-180' : ''}`} />
+                </button>
+                {showAddForm && (
+                    <form onSubmit={handleSave} className="mt-5 space-y-4 animate-in slide-in-from-top-4">
+                        <div className="space-y-3">
+                            <label className="text-xs font-bold text-gray-500 ml-1">방문한 지점 선택</label>
+                            <select value={selectedGym} onChange={e => setSelectedGym(e.target.value)} className="w-full bg-white p-3.5 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-blue-500 text-sm font-semibold text-gray-700 shadow-sm">
+                                {uniqueGyms.map(g => <option key={g} value={g}>{g}</option>)}
+                                <option value="manual">직접 입력 (+)</option>
+                            </select>
+                            {selectedGym === 'manual' && (
+                                <input placeholder="새로운 방문 지점명 입력 (예: 손상원 강남)" className="w-full bg-white p-3.5 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-blue-500 text-sm font-semibold text-gray-700 shadow-sm" value={customGym} onChange={e => setCustomGym(e.target.value)} required />
+                            )}
+                            <select value={newLevel} onChange={e => setNewLevel(e.target.value)} className="w-full bg-white p-3.5 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-blue-500 text-sm font-semibold text-gray-700 shadow-sm" required>
+                                <option value="">성공한 문제의 레벨을 선택하세요</option>
+                                {currentGymLevels.map(lv => <option key={lv} value={lv}>{lv}</option>)}
+                            </select>
+                        </div>
+                        <textarea placeholder="오늘의 하이라이트 무브나 피드백을 자유롭게 기록하세요! (하루에 여러 개 작성 가능)" className="w-full bg-white p-4 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-blue-500 text-sm font-medium h-28 shadow-sm placeholder:text-gray-400 leading-relaxed" value={newSummary} onChange={e => setNewSummary(e.target.value)} />
+                        <button disabled={saving} className="w-full py-4 bg-blue-600 text-white rounded-xl font-bold tracking-widest uppercase shadow-lg shadow-blue-200 hover:bg-blue-700 transition-colors disabled:opacity-50">
+                            {saving ? '저장 중...' : '기록 저장하기 🧗'}
+                        </button>
+                    </form>
+                )}
+            </section>
+
+            {/* 4. 기록 히스토리 리스트 (최신순) */}
+            <div className="space-y-4">
+                <h3 className="text-[10px] text-gray-400 uppercase font-bold px-2 tracking-widest pt-2">My Highlights</h3>
+                {sessions.map(s => (
+                    <div key={s.id} className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm space-y-3">
+                        <div className="flex justify-between items-start">
+                            <div>
+                                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{s.date}</span>
+                                <h4 className="font-bold text-gray-800 text-sm uppercase mt-0.5">{s.gymName}</h4>
+                            </div>
+                            {/* 레벨 뱃지 색상 연동 */}
+                            <span className={`text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm border ${LEVEL_COLORS[s.topLevel] || 'bg-gray-100 text-gray-800'}`}>
+                      {s.topLevel}
+                    </span>
+                        </div>
+                        <p className="text-sm text-gray-600 font-medium leading-relaxed bg-gray-50 p-3 rounded-xl">"{s.summary}"</p>
+                    </div>
+                ))}
+                {sessions.length === 0 && (
+                    <div className="w-full p-8 bg-gray-50 rounded-3xl border border-gray-100 text-center shadow-inner">
+                        <PenSquare className="w-6 h-6 text-gray-300 mx-auto mb-2" />
+                        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">기록된 하이라이트가 없습니다</p>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
+
+// --- [PassManagementView] ---
 const PassManagementView = ({ user, passes, uniqueBrands, uniqueGyms, parkingInfo }) => {
     const [selectedBrand, setSelectedBrand] = useState(uniqueBrands[0] || '');
     const [customBrand, setCustomBrand] = useState('');
@@ -492,7 +741,7 @@ const PassManagementView = ({ user, passes, uniqueBrands, uniqueGyms, parkingInf
     const [total, setTotal] = useState(10); // 횟수권용
     const [months, setMonths] = useState(1); // 기간권용
 
-    // [추가] 구매일과 만료일(유효기간) 상태 추가
+    // 구매일과 만료일
     const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
     const [endDate, setEndDate] = useState('');
 
@@ -504,14 +753,13 @@ const PassManagementView = ({ user, passes, uniqueBrands, uniqueGyms, parkingInf
     const [parkingMemo, setParkingMemo] = useState('');
     const [savingPark, setSavingPark] = useState(false);
 
-    // 날짜 자동 계산 이펙트
+    // 날짜 자동 계산
     useEffect(() => {
         if (startDate) {
             const d = new Date(startDate);
             if (type === 'period') {
                 d.setMonth(d.getMonth() + months);
             } else {
-                // 횟수권의 경우 기본적으로 6개월로 만료일을 추천해줌 (수정 가능)
                 d.setMonth(d.getMonth() + 6);
             }
             setEndDate(d.toISOString().split('T')[0]);
@@ -525,7 +773,6 @@ const PassManagementView = ({ user, passes, uniqueBrands, uniqueGyms, parkingInf
         setTotal(10);
         setMonths(1);
         setStartDate(new Date().toISOString().split('T')[0]);
-        // endDate는 useEffect가 자동으로 다시 계산해줍니다.
     };
 
     const handleAddPass = async (e) => {
@@ -534,7 +781,6 @@ const PassManagementView = ({ user, passes, uniqueBrands, uniqueGyms, parkingInf
         if (!user || !finalBrandName || !startDate || !endDate) return;
         setSavingPass(true);
 
-        // 사용자가 선택한 종류와 숫자를 바탕으로 이름 자동 생성
         const autoGeneratedName = type === 'punch' ? `${total}회권` : `${months}개월권`;
 
         try {
@@ -542,11 +788,11 @@ const PassManagementView = ({ user, passes, uniqueBrands, uniqueGyms, parkingInf
                 gym: finalBrandName,
                 name: autoGeneratedName,
                 type,
-                start: startDate, // DB에 구매일/시작일 저장
-                end: endDate,     // DB에 유효기간/만료일 저장
+                start: startDate,
+                end: endDate,
                 total: type === 'punch' ? Number(total) : null,
                 remaining: type === 'punch' ? Number(total) : null,
-                dDay: 0 // 이건 HomeView에서 렌더링될 때 end 날짜를 기준으로 다시 계산됨
+                dDay: 0
             });
             resetForm();
         } catch (err) { console.error(err); }
@@ -581,7 +827,7 @@ const PassManagementView = ({ user, passes, uniqueBrands, uniqueGyms, parkingInf
     return (
         <div className="space-y-8 animate-in fade-in pb-10">
 
-            {/* 섹션 1: 종합 티켓 등록 폼 (자동 네이밍 및 유효기간 반영) */}
+            {/* 섹션 1: 종합 티켓 등록 폼 */}
             <section className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
                 <div className="flex justify-between items-center mb-6">
                     <h3 className="text-sm font-bold text-gray-800 uppercase tracking-widest flex items-center gap-2">
@@ -593,7 +839,7 @@ const PassManagementView = ({ user, passes, uniqueBrands, uniqueGyms, parkingInf
                 <form onSubmit={handleAddPass} className="space-y-4">
                     {/* 1. 브랜드 선택 */}
                     <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-1">브랜드 선택</label>
+                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-1">브랜드 선택 (공통 사용)</label>
                         <select value={selectedBrand} onChange={e => setSelectedBrand(e.target.value)} className="w-full bg-gray-50 p-3.5 rounded-xl border border-gray-100 outline-none focus:ring-2 focus:ring-blue-500 text-sm font-semibold text-gray-800">
                             {uniqueBrands.map(b => <option key={b} value={b}>{b}</option>)}
                             <option value="manual">직접 입력 (+)</option>
@@ -612,7 +858,6 @@ const PassManagementView = ({ user, passes, uniqueBrands, uniqueGyms, parkingInf
                             </select>
                         </div>
 
-                        {/* 티켓 종류에 따른 옵션 및 날짜 설정 */}
                         {type === 'punch' ? (
                             <div className="space-y-3 bg-orange-50/50 p-4 rounded-2xl border border-orange-100">
                                 <div className="flex items-center justify-between mb-2">
@@ -666,7 +911,7 @@ const PassManagementView = ({ user, passes, uniqueBrands, uniqueGyms, parkingInf
                     </button>
                 </form>
 
-                {/* 등록된 전체 티켓 리스트 (날짜 포함) */}
+                {/* 등록된 이용권 리스트 */}
                 <div className="mt-8 space-y-3">
                     <h3 className="text-[10px] text-gray-400 uppercase font-bold px-2 tracking-widest mb-3 border-t border-gray-100 pt-6">All Registered Tickets</h3>
                     {passes.map(p => (
@@ -866,125 +1111,6 @@ const QuestHistoryView = ({ quests, questHistory }) => {
                     )}
                 </div>
             </section>
-        </div>
-    );
-};
-
-// --- [RecordView: 훈련 기록용 (지점 단위)] ---
-const RecordView = ({ user, sessions, uniqueGyms }) => {
-    const [showAddForm, setShowAddForm] = useState(false);
-    const [selectedGym, setSelectedGym] = useState(uniqueGyms[0] || '');
-    const [customGym, setCustomGym] = useState('');
-    const [newLevel, setNewLevel] = useState('');
-    const [newSummary, setNewSummary] = useState('');
-    const [saving, setSaving] = useState(false);
-
-    // SVG 성장 차트 데이터 계산
-    const chartData = useMemo(() => {
-        const sorted = [...sessions].reverse().slice(-7); // 최근 7개
-        if (sorted.length < 2) return null;
-
-        const levels = GYM_LEVELS["더클라임"]; // 기준 레벨
-        return sorted.map((s, i) => {
-            const levelIdx = levels.indexOf(s.topLevel);
-            return { x: i * 50 + 20, y: 150 - (levelIdx === -1 ? 0 : levelIdx * 15), val: s.topLevel };
-        });
-    }, [sessions]);
-
-    const finalGymName = selectedGym === 'manual' ? customGym.trim() : selectedGym;
-    const currentGymLevels = getLevelsForGym(finalGymName);
-
-    const handleSave = async (e) => {
-        e.preventDefault();
-        if (!user || !newLevel || !finalGymName) return;
-        setSaving(true);
-        try {
-            await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'sessions'), {
-                gymName: finalGymName,
-                topLevel: newLevel,
-                summary: newSummary,
-                date: new Date().toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' }),
-                createdAt: serverTimestamp()
-            });
-            setShowAddForm(false);
-            setNewSummary('');
-            setCustomGym('');
-        } catch (err) { console.error(err); }
-        finally { setSaving(false); }
-    };
-
-    return (
-        <div className="space-y-6 animate-in fade-in pb-10">
-            {/* 성장 분석 차트 */}
-            <section className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100">
-                <h3 className="font-bold text-gray-800 text-sm flex items-center gap-2 uppercase tracking-widest mb-4"><TrendingUp className="w-5 h-5 text-blue-600" /> Growth Analysis</h3>
-                <div className="w-full bg-gray-50 rounded-2xl p-4 overflow-x-auto scrollbar-hide border border-gray-100/50">
-                    {chartData ? (
-                        <svg width="320" height="180" className="mx-auto">
-                            {[0, 1, 2, 3, 4, 5].map(i => <line key={i} x1="0" y1={150 - i*30} x2="320" y2={150 - i*30} stroke="#E2E8F0" strokeWidth="1" strokeDasharray="4 4" />)}
-                            <path d={`M ${chartData[0].x} 150 ${chartData.map(p => `L ${p.x} ${p.y}`).join(' ')} L ${chartData[chartData.length-1].x} 150 Z`} fill="rgba(37, 99, 235, 0.1)" />
-                            <path d={`M ${chartData[0].x} ${chartData[0].y} ${chartData.map(p => `L ${p.x} ${p.y}`).join(' ')}`} fill="none" stroke="#2563EB" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-                            {chartData.map((p, i) => (
-                                <g key={i}>
-                                    <circle cx={p.x} cy={p.y} r="5" fill="#2563EB" stroke="white" strokeWidth="2" />
-                                    <text x={p.x} y={p.y - 12} textAnchor="middle" className="text-[10px] fill-blue-700 font-bold">{p.val}</text>
-                                </g>
-                            ))}
-                        </svg>
-                    ) : <p className="text-center py-10 text-gray-400 text-xs font-medium">최소 2회 이상의 세션 기록이 필요합니다.</p>}
-                </div>
-            </section>
-
-            {/* 인라인 기록 추가 (방문 지점 단위) */}
-            <section className="bg-white p-5 rounded-3xl border-2 border-dashed border-blue-200 transition-all hover:bg-blue-50/50">
-                <button onClick={() => setShowAddForm(!showAddForm)} className="w-full flex items-center justify-between font-bold text-blue-600 uppercase tracking-widest text-sm">
-                    <span className="flex items-center gap-2"><Plus className="w-5 h-5" /> Add New Training</span>
-                    <ChevronDown className={`transition-transform duration-300 ${showAddForm ? 'rotate-180' : ''}`} />
-                </button>
-                {showAddForm && (
-                    <form onSubmit={handleSave} className="mt-5 space-y-4 animate-in slide-in-from-top-4">
-                        <div className="space-y-3">
-                            <label className="text-xs font-bold text-gray-500 ml-1">방문한 지점 선택</label>
-                            <select value={selectedGym} onChange={e => setSelectedGym(e.target.value)} className="w-full bg-white p-3.5 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-blue-500 text-sm font-semibold text-gray-700 shadow-sm">
-                                {uniqueGyms.map(g => <option key={g} value={g}>{g}</option>)}
-                                <option value="manual">직접 입력 (+)</option>
-                            </select>
-                            {selectedGym === 'manual' && (
-                                <input placeholder="새로운 방문 지점명 입력 (예: 더클라임 연남)" className="w-full bg-white p-3.5 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-blue-500 text-sm font-semibold text-gray-700 shadow-sm" value={customGym} onChange={e => setCustomGym(e.target.value)} required />
-                            )}
-                            <select value={newLevel} onChange={e => setNewLevel(e.target.value)} className="w-full bg-white p-3.5 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-blue-500 text-sm font-semibold text-gray-700 shadow-sm" required>
-                                <option value="">오늘의 최고 레벨 선택</option>
-                                {currentGymLevels.map(lv => <option key={lv} value={lv}>{lv}</option>)}
-                            </select>
-                        </div>
-                        <textarea placeholder="오늘의 피드백 (예: 힐훅이 터져서 아쉬움)" className="w-full bg-white p-4 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-blue-500 text-sm font-medium h-24 shadow-sm" value={newSummary} onChange={e => setNewSummary(e.target.value)} />
-                        <button disabled={saving} className="w-full py-3.5 bg-blue-600 text-white rounded-xl font-bold tracking-widest uppercase shadow-lg shadow-blue-200 hover:bg-blue-700 transition-colors disabled:opacity-50">
-                            {saving ? '저장 중...' : 'SAVE LOG 🧗'}
-                        </button>
-                    </form>
-                )}
-            </section>
-
-            {/* 기록 리스트 */}
-            <div className="space-y-4">
-                {sessions.map(s => (
-                    <div key={s.id} className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm space-y-3">
-                        <div className="flex justify-between items-start">
-                            <div>
-                                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{s.date}</span>
-                                <h4 className="font-bold text-gray-800 text-sm uppercase mt-0.5">{s.gymName} <span className="text-blue-600 ml-1">• {s.topLevel}</span></h4>
-                            </div>
-                        </div>
-                        <p className="text-sm text-gray-600 font-medium leading-relaxed">"{s.summary}"</p>
-                    </div>
-                ))}
-                {sessions.length === 0 && (
-                    <div className="w-full p-8 bg-gray-50 rounded-3xl border border-gray-100 text-center shadow-inner">
-                        <PenSquare className="w-6 h-6 text-gray-300 mx-auto mb-2" />
-                        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">기록된 세션이 없습니다</p>
-                    </div>
-                )}
-            </div>
         </div>
     );
 };
