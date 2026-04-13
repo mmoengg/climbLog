@@ -56,28 +56,44 @@ const NavItem = ({ icon, label, isActive, onClick }) => (
     </button>
 );
 
-// --- [암장별 레벨 데이터 & 색상 맵핑] ---
+// --- [암장별 레벨 데이터 & 색상 맵핑 (업데이트 됨!)] ---
 const GYM_LEVELS = {
-    "더클라임": ["하양", "노랑", "주황", "초록", "파랑", "빨강", "보라", "회색", "갈색", "검정"],
-    "서울숲": ["하양", "노랑", "초록", "파랑", "빨강", "보라", "회색", "검정"],
-    "피커스": ["하양", "노랑", "주황", "초록", "파랑", "빨강", "보라", "검정"],
-    "클라이밍파크": ["하양", "노랑", "초록", "파랑", "빨강", "보라", "회색", "검정"],
-    "손상원": ["노랑", "초록", "파랑", "빨강", "보라", "회색", "검정", "흰색"],
+    "더클라임": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11"],
+    "서울숲": ["빨강", "주황", "노랑", "초록", "파랑", "남색", "보라", "갈색", "검정", "핑크"],
+    "피커스": ["빨강", "주황", "노랑", "초록", "파랑", "남색", "보라", "회색", "검정"],
+    "클라이밍파크": ["노랑", "핑크", "파랑", "빨강", "보라", "갈색", "회색", "검정", "흰색"],
+    "손상원": ["흰색", "노랑", "초록", "파랑", "빨강", "검정", "회색", "갈색", "핑크", "보라"],
     "기타": ["Level 1", "Level 2", "Level 3", "Level 4", "Level 5", "Level 6", "Level 7"]
 };
 
 const LEVEL_COLORS = {
+    // 기본 색상들
     "하양": "bg-gray-100 text-gray-800 border-gray-200",
     "흰색": "bg-gray-100 text-gray-800 border-gray-200",
-    "노랑": "bg-yellow-300 text-yellow-900 border-yellow-400",
+    "빨강": "bg-red-500 text-white border-red-600",
     "주황": "bg-orange-400 text-white border-orange-500",
+    "노랑": "bg-yellow-300 text-yellow-900 border-yellow-400",
     "초록": "bg-green-500 text-white border-green-600",
     "파랑": "bg-blue-500 text-white border-blue-600",
-    "빨강": "bg-red-500 text-white border-red-600",
+    "남색": "bg-indigo-700 text-white border-indigo-800", // 새로 추가됨
     "보라": "bg-purple-600 text-white border-purple-700",
+    "핑크": "bg-pink-400 text-white border-pink-500", // 새로 추가됨
     "회색": "bg-gray-500 text-white border-gray-600",
     "갈색": "bg-amber-800 text-white border-amber-900",
-    "검정": "bg-gray-900 text-white border-gray-900"
+    "검정": "bg-gray-900 text-white border-gray-900",
+
+    // 더클라임 전용 숫자 색상 (점점 진해지는 회색/검정 그라데이션)
+    "1": "bg-slate-100 text-slate-800 border-slate-200",
+    "2": "bg-slate-200 text-slate-800 border-slate-300",
+    "3": "bg-slate-300 text-slate-800 border-slate-400",
+    "4": "bg-slate-400 text-white border-slate-500",
+    "5": "bg-slate-500 text-white border-slate-600",
+    "6": "bg-slate-600 text-white border-slate-700",
+    "7": "bg-slate-700 text-white border-slate-800",
+    "8": "bg-slate-800 text-white border-slate-900",
+    "9": "bg-gray-800 text-white border-gray-900",
+    "10": "bg-gray-900 text-white border-black",
+    "11": "bg-black text-white border-gray-800"
 };
 
 const getLevelsForGym = (gymName) => {
@@ -109,7 +125,6 @@ export default function App() {
     const [questHistory, setQuestHistory] = useState({});
     const [expenses, setExpenses] = useState([]);
 
-    // 💡 [추가] 출석 시 어떤 이용권을 썼는지 기록해두는 영수증 장부
     const [passUsageHistory, setPassUsageHistory] = useState({});
 
     useEffect(() => {
@@ -199,7 +214,6 @@ export default function App() {
             setExpenses(exp.sort((a, b) => b.date.localeCompare(a.date) || (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)));
         });
 
-        // 💡 [추가] 이용권 영수증 장부(passUsageHistory) 연동
         const unsubPassUsage = onSnapshot(doc(db, ...userPath, 'data', 'passUsageHistory'), (docSnap) => {
             setPassUsageHistory(docSnap.data() || {});
         });
@@ -265,12 +279,10 @@ export default function App() {
             </header>
 
             <main className="flex-1 overflow-y-auto p-4 pb-24 bg-[#F8FAFC]">
-                {/* passUsageHistory 전달 */}
                 {activeTab === 'home' && <HomeView user={user} attendanceDays={attendanceDays} passes={passes} gearInfo={gearInfo} quests={quests} attendanceHistory={attendanceHistory} questHistory={questHistory} uniqueGyms={uniqueGyms} passUsageHistory={passUsageHistory} />}
                 {activeTab === 'expenses' && <ExpenseView user={user} expenses={expenses} />}
                 {activeTab === 'record' && <RecordView user={user} sessions={sessions} uniqueGyms={uniqueGyms} />}
                 {activeTab === 'passes' && <PassManagementView user={user} passes={passes} uniqueBrands={uniqueBrands} uniqueGyms={uniqueGyms} parkingInfo={parkingInfo} />}
-                {/* passUsageHistory, passes 전달 */}
                 {activeTab === 'history' && <HistoryView user={user} attendanceHistory={attendanceHistory} attendanceDays={attendanceDays} gearInfo={gearInfo} passes={passes} passUsageHistory={passUsageHistory} />}
                 {activeTab === 'questHistory' && <QuestHistoryView quests={quests} questHistory={questHistory} />}
                 {activeTab === 'moves' && <MoveView moves={moves} />}
@@ -540,14 +552,11 @@ const HomeView = ({ user, attendanceDays, passes, gearInfo, quests, attendanceHi
         const newHistoryEntry = existingHistory ? `${existingHistory}, ${finalGymName}` : finalGymName;
         await setDoc(doc(db, ...userPath, 'data', 'attendanceHistory'), { [dateKey]: newHistoryEntry }, { merge: true });
 
-        // 💡 [수정] 티켓(pass)을 사용했을 때 영수증에 기록을 남깁니다.
         if (passId) {
             const pass = passes.find(p => p.id === passId);
             if (pass && pass.type === 'punch' && pass.remaining > 0) {
-                // 잔여 횟수 차감
                 await updateDoc(doc(db, ...userPath, 'passes', passId), { remaining: pass.remaining - 1 });
 
-                // 영수증(passUsageHistory)에 "해당 날짜에 이 티켓 썼음" 기록 추가
                 const existingUsage = passUsageHistory[dateKey] || [];
                 await setDoc(doc(db, ...userPath, 'data', 'passUsageHistory'), {
                     [dateKey]: [...existingUsage, passId]
@@ -608,7 +617,6 @@ const HomeView = ({ user, attendanceDays, passes, gearInfo, quests, attendanceHi
 
     return (
         <div className="space-y-5 animate-in fade-in duration-700">
-            {/* 1. 캘린더 및 직관적인 출석 버튼 */}
             <section className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100">
                 <div className="flex justify-between items-center mb-5">
                     <div className="flex items-center gap-2">
@@ -694,7 +702,6 @@ const HomeView = ({ user, attendanceDays, passes, gearInfo, quests, attendanceHi
                 </div>
             </section>
 
-            {/* 2. 마이크로 퀘스트 */}
             <section className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100">
                 <h3 className="font-bold text-gray-800 text-sm flex items-center gap-2 uppercase tracking-widest mb-4">
                     <Flame className="w-5 h-5 text-orange-500" /> Daily Micro-Quests
@@ -721,7 +728,6 @@ const HomeView = ({ user, attendanceDays, passes, gearInfo, quests, attendanceHi
                 </div>
             </section>
 
-            {/* 3. 이용권 지갑 (메인 화면에서는 간략하게 표시) */}
             <div className="flex gap-3 overflow-x-auto pb-4 scrollbar-hide px-1">
                 {urgentPasses.map(p => (
                     <div key={p.id} className={`min-w-[270px] p-5 rounded-3xl border transition-all relative overflow-hidden ${p.type === 'period' ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'bg-white border-gray-100 shadow-sm'}`}>
@@ -757,7 +763,6 @@ const HomeView = ({ user, attendanceDays, passes, gearInfo, quests, attendanceHi
                 )}
             </div>
 
-            {/* 5. 암벽화 수명 관리 */}
             <section className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm">
                 {!showShoeForm ? (
                     <div className="flex items-center justify-between">
@@ -1266,7 +1271,7 @@ const PassManagementView = ({ user, passes, uniqueBrands, uniqueGyms, parkingInf
     );
 };
 
-// --- [HistoryView: 영수증 복원 로직 추가] ---
+// --- [HistoryView: 출석 기록 수정/삭제 기능 완벽 추가] ---
 const HistoryView = ({ user, attendanceHistory, attendanceDays, gearInfo, passes, passUsageHistory }) => {
     const [editingDateKey, setEditingDateKey] = useState(null);
     const [editDate, setEditDate] = useState('');
@@ -1319,7 +1324,6 @@ const HistoryView = ({ user, attendanceHistory, attendanceDays, gearInfo, passes
                 }
                 await setDoc(doc(db, ...userPath, 'data', 'attendance'), { days: newDays }, { merge: true });
 
-                // 💡 [추가] 날짜를 수정하면 해당 날짜의 영수증(사용 기록)도 새 날짜로 이동!
                 if (passUsageHistory[oldDateKey]) {
                     const newPassUsage = { ...passUsageHistory };
                     const movedPasses = newPassUsage[oldDateKey];
@@ -1339,19 +1343,15 @@ const HistoryView = ({ user, attendanceHistory, attendanceDays, gearInfo, passes
         try {
             const userPath = ['artifacts', appId, 'users', user.uid];
 
-            // 💡 [핵심 추가] 이 날짜에 사용했던 티켓(영수증)이 있는지 확인하고 복구(환불)합니다.
             const usedPasses = passUsageHistory[dateKey];
             if (usedPasses && usedPasses.length > 0) {
                 for (const pId of usedPasses) {
                     const passToRestore = passes.find(p => p.id === pId);
-                    // 횟수권인 경우에만 잔여 횟수를 +1 시켜서 돌려줌
                     if (passToRestore && passToRestore.type === 'punch') {
-                        // 단, 실수로 원래 전체 횟수(total)를 넘지 않도록 안전장치 적용
                         const restoredRemaining = Math.min(passToRestore.total, passToRestore.remaining + 1);
                         await updateDoc(doc(db, ...userPath, 'passes', pId), { remaining: restoredRemaining });
                     }
                 }
-                // 환불을 마쳤으니 해당 날짜의 영수증 장부 파기
                 const newPassUsage = { ...passUsageHistory };
                 delete newPassUsage[dateKey];
                 await setDoc(doc(db, ...userPath, 'data', 'passUsageHistory'), newPassUsage);
