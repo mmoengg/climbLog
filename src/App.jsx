@@ -21,7 +21,7 @@ import {
 import {
     Calendar, BookOpen, PenSquare, Home, Award, ChevronRight,
     CheckCircle2, MapPin, Search, Video, PlayCircle, Users,
-    Activity, Ticket, Menu, X, Settings, LogOut, Edit3, Clock, Flame, Target, TrendingUp, Car, AlertCircle, Plus, MessageSquare, Sticker, Smile, Wind, History, Trophy, Footprints, Hand, ShieldCheck, Zap, ChevronDown, Loader2, Mail, Lock, Trash2, CalendarDays, Edit, Wallet, Receipt, PieChart, Coins
+    Activity, Ticket, Menu, X, Settings, LogOut, Edit3, Clock, Flame, Target, TrendingUp, Car, AlertCircle, Plus, MessageSquare, Sticker, Smile, Wind, History, Trophy, Footprints, Hand, ShieldCheck, Zap, ChevronDown, Loader2, Mail, Lock, Trash2, CalendarDays, Edit, Wallet, Receipt, PieChart, Coins, ChevronLeft
 } from 'lucide-react';
 
 // --- [Firebase 설정] ---
@@ -109,6 +109,9 @@ export default function App() {
     const [questHistory, setQuestHistory] = useState({});
     const [expenses, setExpenses] = useState([]);
 
+    // 💡 [추가] 출석 시 어떤 이용권을 썼는지 기록해두는 영수증 장부
+    const [passUsageHistory, setPassUsageHistory] = useState({});
+
     useEffect(() => {
         if (!auth) { setLoading(false); return; }
         const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -141,12 +144,25 @@ export default function App() {
         });
 
         const unsubQuests = onSnapshot(doc(db, ...userPath, 'data', 'quests'), (docSnap) => {
-            if (docSnap.exists()) setQuests(docSnap.data()?.list || []);
-            else setQuests([
-                { id: 1, title: '오버행 벽 도전', goal: 3, current: 0, icon: 'Wind', color: 'bg-indigo-500' },
-                { id: 2, title: '안전한 매트 착지', goal: 5, current: 0, icon: 'Activity', color: 'bg-emerald-500' },
-                { id: 3, title: '옆 사람 나이스!', goal: 1, current: 0, icon: 'Smile', color: 'bg-amber-500' },
-            ]);
+            const now = new Date();
+            const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                if (data.lastDate !== todayStr) {
+                    const resetList = (data.list || []).map(q => ({ ...q, current: 0 }));
+                    setDoc(doc(db, ...userPath, 'data', 'quests'), { list: resetList, lastDate: todayStr }, { merge: true });
+                } else {
+                    setQuests(data.list || []);
+                }
+            } else {
+                const initialList = [
+                    { id: 1, title: '오버행 벽 도전', goal: 3, current: 0, icon: 'Wind', color: 'bg-indigo-500' },
+                    { id: 2, title: '안전한 매트 착지', goal: 5, current: 0, icon: 'Activity', color: 'bg-emerald-500' },
+                    { id: 3, title: '옆 사람 나이스!', goal: 1, current: 0, icon: 'Smile', color: 'bg-amber-500' },
+                ];
+                setDoc(doc(db, ...userPath, 'data', 'quests'), { list: initialList, lastDate: todayStr }, { merge: true });
+            }
         });
 
         const unsubMoves = onSnapshot(doc(db, ...userPath, 'data', 'moves'), (docSnap) => {
@@ -183,7 +199,12 @@ export default function App() {
             setExpenses(exp.sort((a, b) => b.date.localeCompare(a.date) || (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)));
         });
 
-        return () => { unsubAttendance(); unsubPasses(); unsubQuests(); unsubMoves(); unsubSessions(); unsubGear(); unsubParking(); unsubHistory(); unsubQuestHistory(); unsubExpenses(); };
+        // 💡 [추가] 이용권 영수증 장부(passUsageHistory) 연동
+        const unsubPassUsage = onSnapshot(doc(db, ...userPath, 'data', 'passUsageHistory'), (docSnap) => {
+            setPassUsageHistory(docSnap.data() || {});
+        });
+
+        return () => { unsubPasses(); unsubQuests(); unsubMoves(); unsubSessions(); unsubGear(); unsubParking(); unsubHistory(); unsubQuestHistory(); unsubExpenses(); unsubPassUsage(); };
     }, [user]);
 
     const uniqueBrands = useMemo(() => {
@@ -208,7 +229,6 @@ export default function App() {
         </div>
     );
 
-    // 이 부분이 가장 중요합니다! 이 코드가 없으면 에러가 발생합니다.
     if (!user) return <AuthScreen />;
 
     return (
@@ -241,16 +261,17 @@ export default function App() {
                 <h1 className="text-lg font-bold uppercase tracking-widest text-gray-800">
                     {activeTab === 'home' ? 'Dashboard' : activeTab === 'record' ? 'Training' : activeTab === 'passes' ? 'Tickets' : activeTab === 'history' ? 'History' : activeTab === 'questHistory' ? 'Quests' : activeTab === 'expenses' ? 'Wallet' : 'Moves'}
                 </h1>
-                {/* 선택적 체이닝(?.)을 더해 안전성을 두 배로 올렸습니다 */}
                 <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-xs uppercase shadow-inner">{user?.email?.charAt(0)}</div>
             </header>
 
             <main className="flex-1 overflow-y-auto p-4 pb-24 bg-[#F8FAFC]">
-                {activeTab === 'home' && <HomeView user={user} attendanceDays={attendanceDays} passes={passes} gearInfo={gearInfo} quests={quests} attendanceHistory={attendanceHistory} questHistory={questHistory} uniqueGyms={uniqueGyms} />}
+                {/* passUsageHistory 전달 */}
+                {activeTab === 'home' && <HomeView user={user} attendanceDays={attendanceDays} passes={passes} gearInfo={gearInfo} quests={quests} attendanceHistory={attendanceHistory} questHistory={questHistory} uniqueGyms={uniqueGyms} passUsageHistory={passUsageHistory} />}
                 {activeTab === 'expenses' && <ExpenseView user={user} expenses={expenses} />}
                 {activeTab === 'record' && <RecordView user={user} sessions={sessions} uniqueGyms={uniqueGyms} />}
                 {activeTab === 'passes' && <PassManagementView user={user} passes={passes} uniqueBrands={uniqueBrands} uniqueGyms={uniqueGyms} parkingInfo={parkingInfo} />}
-                {activeTab === 'history' && <HistoryView user={user} attendanceHistory={attendanceHistory} attendanceDays={attendanceDays} gearInfo={gearInfo} />}
+                {/* passUsageHistory, passes 전달 */}
+                {activeTab === 'history' && <HistoryView user={user} attendanceHistory={attendanceHistory} attendanceDays={attendanceDays} gearInfo={gearInfo} passes={passes} passUsageHistory={passUsageHistory} />}
                 {activeTab === 'questHistory' && <QuestHistoryView quests={quests} questHistory={questHistory} />}
                 {activeTab === 'moves' && <MoveView moves={moves} />}
             </main>
@@ -457,9 +478,33 @@ const ExpenseView = ({ user, expenses }) => {
 };
 
 // --- [HomeView] ---
-const HomeView = ({ user, attendanceDays, passes, gearInfo, quests, attendanceHistory, questHistory, uniqueGyms }) => {
-    const today = new Date().getDate();
-    const isAttendedToday = attendanceDays.includes(today);
+const HomeView = ({ user, attendanceDays, passes, gearInfo, quests, attendanceHistory, questHistory, uniqueGyms, passUsageHistory }) => {
+    const [currentCalendarDate, setCurrentCalendarDate] = useState(new Date());
+    const year = currentCalendarDate.getFullYear();
+    const month = currentCalendarDate.getMonth();
+    const today = new Date();
+
+    const prevMonth = () => setCurrentCalendarDate(new Date(year, month - 1, 1));
+    const nextMonth = () => setCurrentCalendarDate(new Date(year, month + 1, 1));
+
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const firstDayOfWeek = new Date(year, month, 1).getDay();
+
+    const isToday = (d) => {
+        return today.getDate() === d && today.getMonth() === month && today.getFullYear() === year;
+    };
+
+    const hasAttended = (d) => {
+        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        return !!attendanceHistory[dateStr];
+    };
+
+    const monthlyAttendanceCount = useMemo(() => {
+        const monthPrefix = `${year}-${String(month + 1).padStart(2, '0')}`;
+        return Object.keys(attendanceHistory).filter(dateKey => dateKey.startsWith(monthPrefix)).length;
+    }, [attendanceHistory, year, month]);
+
+    const totalVisits = Object.keys(attendanceHistory).length;
 
     const currentUses = gearInfo.uses !== undefined ? gearInfo.uses : (gearInfo.shoeUses || 0);
     const maxUses = gearInfo.max || 100;
@@ -473,8 +518,6 @@ const HomeView = ({ user, attendanceDays, passes, gearInfo, quests, attendanceHi
     const [showShoeForm, setShowShoeForm] = useState(false);
     const [shoeNameInput, setShoeNameInput] = useState('');
     const [shoeMaxInput, setShoeMaxInput] = useState(100);
-
-    const totalVisits = Object.keys(attendanceHistory).length;
 
     const urgentPasses = useMemo(() => {
         return [...passes].sort((a, b) => a.dDay - b.dDay);
@@ -497,10 +540,18 @@ const HomeView = ({ user, attendanceDays, passes, gearInfo, quests, attendanceHi
         const newHistoryEntry = existingHistory ? `${existingHistory}, ${finalGymName}` : finalGymName;
         await setDoc(doc(db, ...userPath, 'data', 'attendanceHistory'), { [dateKey]: newHistoryEntry }, { merge: true });
 
+        // 💡 [수정] 티켓(pass)을 사용했을 때 영수증에 기록을 남깁니다.
         if (passId) {
             const pass = passes.find(p => p.id === passId);
             if (pass && pass.type === 'punch' && pass.remaining > 0) {
+                // 잔여 횟수 차감
                 await updateDoc(doc(db, ...userPath, 'passes', passId), { remaining: pass.remaining - 1 });
+
+                // 영수증(passUsageHistory)에 "해당 날짜에 이 티켓 썼음" 기록 추가
+                const existingUsage = passUsageHistory[dateKey] || [];
+                await setDoc(doc(db, ...userPath, 'data', 'passUsageHistory'), {
+                    [dateKey]: [...existingUsage, passId]
+                }, { merge: true });
             }
         }
         setShowCheckInOptions(false);
@@ -552,27 +603,46 @@ const HomeView = ({ user, attendanceDays, passes, gearInfo, quests, attendanceHi
         return <Smile className="w-5 h-5" />;
     };
 
+    const todayDateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    const isAttendedTodayForButton = !!attendanceHistory[todayDateStr];
+
     return (
         <div className="space-y-5 animate-in fade-in duration-700">
+            {/* 1. 캘린더 및 직관적인 출석 버튼 */}
             <section className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100">
                 <div className="flex justify-between items-center mb-5">
-                    <h3 className="font-bold text-gray-800 flex items-center gap-2 uppercase tracking-widest text-sm"><Calendar className="w-5 h-5 text-blue-600" /> Attendance</h3>
+                    <div className="flex items-center gap-2">
+                        <button onClick={prevMonth} className="p-1 text-gray-400 hover:text-blue-600 transition-colors"><ChevronLeft className="w-5 h-5" /></button>
+                        <h3 className="font-black text-gray-800 text-sm w-16 text-center">{month + 1}월</h3>
+                        <button onClick={nextMonth} className="p-1 text-gray-400 hover:text-blue-600 transition-colors"><ChevronRight className="w-5 h-5" /></button>
+                    </div>
+
                     <div className="flex gap-1.5 items-center">
-                        <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-md">이번 달 {attendanceDays.length}회</span>
+                        <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-md">{month + 1}월 {monthlyAttendanceCount}회</span>
                         <span className="text-[10px] font-bold text-white bg-blue-600 px-2.5 py-1 rounded-md shadow-sm">총 누적 {totalVisits}회</span>
                     </div>
                 </div>
+
                 <div className="grid grid-cols-7 gap-1 text-center text-[10px] mb-6 font-bold text-gray-400">
-                    {['S','M','T','W','T','F','S'].map(d => <div key={d}>{d}</div>)}
-                    {Array.from({ length: 31 }, (_, i) => i + 1).map(day => (
-                        <div key={day} className={`aspect-square flex items-center justify-center rounded-2xl text-xs transition-all ${attendanceDays.includes(day) ? 'bg-blue-600 text-white font-bold shadow-md' : day === today ? 'border-2 border-blue-600 text-blue-600 font-bold' : 'text-gray-300'}`}>{day}</div>
-                    ))}
+                    {['일','월','화','수','목','금','토'].map(d => <div key={d} className="mb-2">{d}</div>)}
+
+                    {Array.from({ length: firstDayOfWeek }, (_, i) => <div key={`blank-${i}`} />)}
+
+                    {Array.from({ length: daysInMonth }, (_, i) => i + 1).map(day => {
+                        const attended = hasAttended(day);
+                        const isTodayFlag = isToday(day);
+                        return (
+                            <div key={day} className={`aspect-square flex items-center justify-center rounded-2xl text-xs transition-all cursor-pointer hover:scale-110 ${attended ? 'bg-blue-600 text-white font-bold shadow-md' : isTodayFlag ? 'border-2 border-blue-600 text-blue-600 font-bold' : 'text-gray-600 font-medium hover:bg-gray-100'}`}>
+                                {day}
+                            </div>
+                        )
+                    })}
                 </div>
 
                 <div className="mt-4">
                     {!showCheckInOptions ? (
                         <button onClick={() => setShowCheckInOptions(true)} className="w-full py-4 bg-blue-600 text-white rounded-2xl font-bold tracking-widest shadow-xl hover:bg-blue-700 transition-all uppercase flex items-center justify-center gap-2">
-                            출석 체크하기 🐾
+                            {isAttendedTodayForButton ? '한 번 더 출석하기 🐾' : '출석 체크하기 🐾'}
                         </button>
                     ) : (
                         <div className="space-y-3 animate-in slide-in-from-top-2 duration-300 bg-gray-50 p-4 rounded-2xl border border-gray-100">
@@ -624,6 +694,7 @@ const HomeView = ({ user, attendanceDays, passes, gearInfo, quests, attendanceHi
                 </div>
             </section>
 
+            {/* 2. 마이크로 퀘스트 */}
             <section className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100">
                 <h3 className="font-bold text-gray-800 text-sm flex items-center gap-2 uppercase tracking-widest mb-4">
                     <Flame className="w-5 h-5 text-orange-500" /> Daily Micro-Quests
@@ -650,6 +721,7 @@ const HomeView = ({ user, attendanceDays, passes, gearInfo, quests, attendanceHi
                 </div>
             </section>
 
+            {/* 3. 이용권 지갑 (메인 화면에서는 간략하게 표시) */}
             <div className="flex gap-3 overflow-x-auto pb-4 scrollbar-hide px-1">
                 {urgentPasses.map(p => (
                     <div key={p.id} className={`min-w-[270px] p-5 rounded-3xl border transition-all relative overflow-hidden ${p.type === 'period' ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'bg-white border-gray-100 shadow-sm'}`}>
@@ -685,6 +757,7 @@ const HomeView = ({ user, attendanceDays, passes, gearInfo, quests, attendanceHi
                 )}
             </div>
 
+            {/* 5. 암벽화 수명 관리 */}
             <section className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm">
                 {!showShoeForm ? (
                     <div className="flex items-center justify-between">
@@ -1075,7 +1148,6 @@ const PassManagementView = ({ user, passes, uniqueBrands, uniqueGyms, parkingInf
                             </select>
                         </div>
 
-                        {/* 사파리 레이아웃 버그 해결: 위아래로 분리된 수직 폼 구조로 개편 */}
                         {type === 'punch' ? (
                             <div className="space-y-2 bg-orange-50/50 p-4 rounded-2xl border border-orange-100">
                                 <div className="flex items-center justify-between mb-3 bg-white p-3 rounded-xl border border-orange-100 shadow-sm min-w-0">
@@ -1194,8 +1266,8 @@ const PassManagementView = ({ user, passes, uniqueBrands, uniqueGyms, parkingInf
     );
 };
 
-// --- [HistoryView: 출석 기록 수정/삭제 기능 완벽 추가] ---
-const HistoryView = ({ user, attendanceHistory, attendanceDays, gearInfo }) => {
+// --- [HistoryView: 영수증 복원 로직 추가] ---
+const HistoryView = ({ user, attendanceHistory, attendanceDays, gearInfo, passes, passUsageHistory }) => {
     const [editingDateKey, setEditingDateKey] = useState(null);
     const [editDate, setEditDate] = useState('');
     const [editGymName, setEditGymName] = useState('');
@@ -1246,6 +1318,16 @@ const HistoryView = ({ user, attendanceHistory, attendanceDays, gearInfo }) => {
                     if (!newDays.includes(newD.getDate())) newDays.push(newD.getDate());
                 }
                 await setDoc(doc(db, ...userPath, 'data', 'attendance'), { days: newDays }, { merge: true });
+
+                // 💡 [추가] 날짜를 수정하면 해당 날짜의 영수증(사용 기록)도 새 날짜로 이동!
+                if (passUsageHistory[oldDateKey]) {
+                    const newPassUsage = { ...passUsageHistory };
+                    const movedPasses = newPassUsage[oldDateKey];
+                    delete newPassUsage[oldDateKey];
+
+                    newPassUsage[editDate] = [...(newPassUsage[editDate] || []), ...movedPasses];
+                    await setDoc(doc(db, ...userPath, 'data', 'passUsageHistory'), newPassUsage);
+                }
             }
             setEditingDateKey(null);
         } catch(e) { console.error(e); }
@@ -1253,13 +1335,31 @@ const HistoryView = ({ user, attendanceHistory, attendanceDays, gearInfo }) => {
     };
 
     const handleDelete = async (dateKey) => {
-        if (!window.confirm(`${dateKey} 출석 기록을 완전히 삭제하시겠습니까? (신발 수명도 복구됩니다)`)) return;
+        if (!window.confirm(`${dateKey} 출석 기록을 완전히 삭제하시겠습니까? (사용했던 티켓 횟수와 신발 수명이 복구됩니다)`)) return;
         try {
+            const userPath = ['artifacts', appId, 'users', user.uid];
+
+            // 💡 [핵심 추가] 이 날짜에 사용했던 티켓(영수증)이 있는지 확인하고 복구(환불)합니다.
+            const usedPasses = passUsageHistory[dateKey];
+            if (usedPasses && usedPasses.length > 0) {
+                for (const pId of usedPasses) {
+                    const passToRestore = passes.find(p => p.id === pId);
+                    // 횟수권인 경우에만 잔여 횟수를 +1 시켜서 돌려줌
+                    if (passToRestore && passToRestore.type === 'punch') {
+                        // 단, 실수로 원래 전체 횟수(total)를 넘지 않도록 안전장치 적용
+                        const restoredRemaining = Math.min(passToRestore.total, passToRestore.remaining + 1);
+                        await updateDoc(doc(db, ...userPath, 'passes', pId), { remaining: restoredRemaining });
+                    }
+                }
+                // 환불을 마쳤으니 해당 날짜의 영수증 장부 파기
+                const newPassUsage = { ...passUsageHistory };
+                delete newPassUsage[dateKey];
+                await setDoc(doc(db, ...userPath, 'data', 'passUsageHistory'), newPassUsage);
+            }
+
             const newHistory = { ...attendanceHistory };
             const gymsCount = newHistory[dateKey].split(',').length;
             delete newHistory[dateKey];
-
-            const userPath = ['artifacts', appId, 'users', user.uid];
             await setDoc(doc(db, ...userPath, 'data', 'attendanceHistory'), newHistory);
 
             const currentUses = gearInfo.uses !== undefined ? gearInfo.uses : (gearInfo.shoeUses || 0);
@@ -1303,7 +1403,6 @@ const HistoryView = ({ user, attendanceHistory, attendanceDays, gearInfo }) => {
                                                 <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">기록 수정하기</span>
                                             </div>
                                             <div className="space-y-2">
-                                                {/* 사파리 레이아웃 버그 해결: 수정 폼도 상하 분리형으로 변경 */}
                                                 <div className="flex items-center justify-between bg-white p-3.5 rounded-xl border border-gray-200 shadow-sm min-w-0">
                                                     <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest shrink-0 mr-2">날짜</label>
                                                     <input type="date" value={editDate} onChange={e => setEditDate(e.target.value)} className="appearance-none bg-transparent outline-none text-sm font-bold text-gray-700 text-right w-full flex-1 min-w-0" />
