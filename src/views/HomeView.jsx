@@ -221,7 +221,7 @@ const HomeView = ({ db, appId, user, attendanceDays, passes, gearInfo, quests, a
             </section>
 
             <section className="bg-white p-5 rounded-lg border border-border">
-                <h3 className="font-bold text-text text-xs flex items-center gap-2 uppercase tracking-widest mb-4">
+                <h3 className="text-text text-sm font-semibold flex items-center gap-1.5 uppercase tracking-widest mb-4">
                     <Flame className="w-5 h-5 text-secondary" /> Daily Micro-Quests
                 </h3>
 
@@ -230,13 +230,13 @@ const HomeView = ({ db, appId, user, attendanceDays, passes, gearInfo, quests, a
                         <button
                             key={q.id}
                             onClick={() => handleQuestClick(q.id)}
-                            className={`relative aspect-square rounded-2xl flex flex-col items-center justify-center transition-all border-2 ${q.current === q.goal ? `${q.color} text-white shadow-lg border-transparent` : 'bg-white text-gray-500 border-gray-100 hover:border-gray-200'}`}
+                            className={`relative aspect-square rounded-lg flex flex-col items-center justify-center transition-all border ${q.current === q.goal ? `${q.color} text-white border-transparent` : 'bg-white text-text-300 border-neutral-100 hover:border-primary'}`}
                         >
                             {q.current === q.goal ? <CheckCircle2 className="w-6 h-6 mb-1" /> : getQuestIcon(q.icon)}
-                            <p className="text-[10px] font-bold mt-2 text-center px-1 leading-tight">{q.title}</p>
+                            <p className="text-xs font-bold mt-2 text-center px-1 leading-tight">{q.title}</p>
                             <div className="mt-1.5 flex gap-1">
                                 {Array.from({ length: q.goal }).map((_, i) => (
-                                    <div key={i} className={`w-1.5 h-1.5 rounded-full ${i < q.current ? (q.current === q.goal ? 'bg-white' : 'bg-blue-500') : 'bg-gray-200'}`} />
+                                    <div key={i} className={`w-1.5 h-1.5 rounded-full ${i < q.current ? (q.current === q.goal ? 'bg-white' : 'bg-primary') : 'bg-gray-200'}`} />
                                 ))}
                             </div>
                         </button>
@@ -246,27 +246,27 @@ const HomeView = ({ db, appId, user, attendanceDays, passes, gearInfo, quests, a
                 </div>
             </section>
 
-            <div className="flex gap-3 overflow-x-auto pb-4 scrollbar-hide px-1">
+            <div className="flex gap-3 overflow-x-auto  scrollbar-hide">
                 {urgentPasses.map(p => (
-                    <div key={p.id} className={`min-w-[270px] p-5 rounded-3xl border transition-all relative overflow-hidden ${p.type === 'period' ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'bg-white border-gray-100 shadow-sm'}`}>
-                        <Ticket className={`absolute -right-4 -bottom-4 w-24 h-24 ${p.type === 'period' ? 'opacity-10 text-white' : 'opacity-5 text-gray-900'}`} />
+                    <div key={p.id} className={`min-w-[270px] p-5 rounded-lg border  transition-all relative overflow-hidden ${p.type === 'period' ? 'bg-primary text-white ' : 'bg-white border-border'}`}>
+                        <Ticket className={`absolute -right-4 bottom-14 w-18 h-18 ${p.type === 'period' ? 'opacity-10 text-white' : 'opacity-5 text-text'}`} />
                         <div className="flex justify-between items-start mb-4">
-                            <span className={`text-[10px] px-2 py-1 rounded-full font-bold uppercase tracking-wider ${p.type === 'period' ? 'bg-white/20' : 'bg-gray-100 text-gray-600'}`}>{p.name}</span>
-                            <div className={`text-xs font-black ${p.dDay < 7 ? 'text-rose-500 animate-pulse' : (p.type === 'period' ? 'text-blue-100' : 'text-blue-600')}`}>D-{p.dDay}</div>
+                            <span className={`text-xs px-2 py-1 rounded-full font-bold uppercase tracking-wider ${p.type === 'period' ? 'bg-white/20' : 'bg-gray-100 text-text'}`}>{p.name}</span>
+                            <div className={`text-xs font-black ${p.dDay < 7 ? 'text-error animate-pulse' : (p.type === 'period' ? 'text-blue-100' : 'text-primary')}`}>D-{p.dDay}</div>
                         </div>
-                        <h4 className="font-bold text-lg uppercase mb-2 tracking-tight">{p.gym}</h4>
-                        <p className={`text-[10px] font-semibold tracking-wide flex items-center gap-1 ${p.type === 'period' ? 'text-blue-200' : 'text-gray-400'}`}>
+                        <h4 className="font-semibold text-md uppercase mb-2 tracking-tight">{p.gym}</h4>
+                        <p className={`text-xs font-semibold tracking-wide flex items-center gap-1 ${p.type === 'period' ? 'text-blue-200' : 'text-gray-400'}`}>
                             <CalendarDays className="w-3 h-3" /> {p.end} 까지
                         </p>
 
                         {p.type === 'punch' && (
                             <div className="mt-5 space-y-2">
-                                <div className="flex justify-between text-[10px] font-bold">
-                                    <span className={`${p.type === 'period' ? 'text-white' : 'text-gray-400'} uppercase tracking-widest`}>Remaining</span>
-                                    <span className={`${p.type === 'period' ? 'text-white' : 'text-orange-600'}`}>{p.remaining} / {p.total}</span>
+                                <div className="flex justify-between text-[10px]">
+                                    <span className={`${p.type === 'period' ? 'text-white' : 'text-text-500'} uppercase tracking-widest`}>Remaining</span>
+                                    <span className={`${p.type === 'period' ? 'text-white' : 'text-secondary  font-semibold'}`}>{p.remaining} / {p.total}</span>
                                 </div>
                                 <div className="flex gap-1 h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
-                                    <div className="bg-orange-400 h-full transition-all duration-500 ease-out" style={{ width: `${(p.remaining/p.total)*100}%` }} />
+                                    <div className="bg-secondary h-full transition-all duration-500 ease-out" style={{ width: `${(p.remaining/p.total)*100}%` }} />
                                 </div>
                             </div>
                         )}
@@ -281,44 +281,44 @@ const HomeView = ({ db, appId, user, attendanceDays, passes, gearInfo, quests, a
                 )}
             </div>
 
-            <section className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm">
+            <section className="bg-white p-5 rounded-lg border border-border">
                 {!showShoeForm ? (
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
-                            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center font-black text-lg border-2 ${lifespanPercent < 30 ? 'bg-rose-50 border-rose-200 text-rose-600' : 'bg-blue-50 border-blue-200 text-blue-600'}`}>
+                            <div className={`w-14 h-14 rounded-full flex items-center justify-center font-black text-md border-2 ${lifespanPercent < 30 ? 'bg-rose-50 border-rose-200 text-rose-600' : 'bg-blue-50 border-blue-200 text-primary'}`}>
                                 {lifespanPercent}%
                             </div>
                             <div>
-                                <h4 className="font-bold text-sm text-gray-800 flex items-center gap-1">
+                                <h4 className="font-semibold text-xs text-text">
                                     {shoeName}
                                 </h4>
-                                <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-widest mt-0.5">
+                                <p className="text-xs text-text-500 mt-0.5">
                                     수명: {currentUses} / {maxUses} Climbs
                                 </p>
                             </div>
                         </div>
-                        <button onClick={() => setShowShoeForm(true)} className="p-2.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors border border-gray-100">
+                        <button onClick={() => setShowShoeForm(true)} className="p-2.5 text-gray-400 hover:text-primary hover:bg-blue-50 rounded-xl transition-colors border border-gray-100">
                             <Edit className="w-4 h-4" />
                         </button>
                     </div>
                 ) : (
                     <form onSubmit={handleRegisterShoe} className="space-y-3 animate-in fade-in slide-in-from-right-4">
                         <div className="flex justify-between items-center mb-2 border-b border-gray-100 pb-2">
-                            <h4 className="text-xs font-bold text-gray-800 uppercase tracking-widest flex items-center gap-2"><Footprints className="w-4 h-4 text-blue-600"/> 새 암벽화 등록</h4>
+                            <h4 className="text-xs font-bold text-gray-800 uppercase tracking-widest flex items-center gap-2"><Footprints className="w-4 h-4 text-primary"/> 새 암벽화 등록</h4>
                             <button type="button" onClick={() => setShowShoeForm(false)} className="text-gray-400 hover:text-gray-600 p-1"><X className="w-4 h-4" /></button>
                         </div>
                         <input
                             placeholder="암벽화 이름 (예: VSR, 드론)"
-                            className="w-full min-w-0 bg-gray-50 p-3 rounded-xl border border-gray-100 outline-none focus:ring-2 focus:ring-blue-500 text-sm font-semibold text-gray-800"
+                            className="w-full min-w-0 bg-gray-50 p-3 rounded-xl border border-gray-100 outline-none focus:ring-2 focus:ring-primary text-sm font-semibold text-gray-800"
                             value={shoeNameInput}
                             onChange={e => setShoeNameInput(e.target.value)}
                             required
                         />
                         <div className="flex items-center justify-between bg-gray-50 p-3 rounded-xl border border-gray-100 min-w-0">
-                            <label className="text-[10px] text-gray-500 font-bold uppercase tracking-widest shrink-0">예상 수명(출석 횟수)</label>
+                            <label className="text-xs text-gray-500 font-bold uppercase tracking-widest shrink-0">예상 수명(출석 횟수)</label>
                             <input
                                 type="number"
-                                className="bg-white min-w-0 p-2 rounded-lg border border-gray-200 outline-none focus:ring-2 focus:ring-blue-500 text-sm font-bold w-20 text-center shadow-sm"
+                                className="bg-white min-w-0 p-2 rounded-lg border border-gray-200 outline-none focus:ring-2 focus:ring-pr   blue-500 text-sm font-bold w-20 text-center shadow-sm"
                                 value={shoeMaxInput}
                                 onChange={e => setShoeMaxInput(e.target.value)}
                                 min="1"
