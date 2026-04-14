@@ -135,21 +135,21 @@ const HomeView = ({ db, appId, user, attendanceDays, passes, gearInfo, quests, a
 
     return (
         <div className="space-y-5 animate-in fade-in duration-700">
-            <section className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100">
+            <section className="p-5 rounded-lg  border border-border bg-white">
                 <div className="flex justify-between items-center mb-5">
-                    <div className="flex items-center gap-2">
-                        <button onClick={prevMonth} className="p-1 text-gray-400 hover:text-blue-600 transition-colors"><ChevronLeft className="w-5 h-5" /></button>
-                        <h3 className="font-black text-gray-800 text-sm w-16 text-center">{month + 1}월</h3>
-                        <button onClick={nextMonth} className="p-1 text-gray-400 hover:text-blue-600 transition-colors"><ChevronRight className="w-5 h-5" /></button>
+                    <div className="flex items-center gap-1">
+                        <button onClick={prevMonth} className="p-1 text-text hover:text-primary transition-colors"><ChevronLeft className="w-4.5 h-4.5" /></button>
+                        <h3 className="text-text text-sm font-semibold w-6 text-center">{month + 1}월</h3>
+                        <button onClick={nextMonth} className="p-1 text-text hover:text-primary transition-colors"><ChevronRight className="w-4.5 h-4.5" /></button>
                     </div>
 
-                    <div className="flex gap-1.5 items-center">
-                        <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-md">{month + 1}월 {monthlyAttendanceCount}회</span>
-                        <span className="text-[10px] font-bold text-white bg-blue-600 px-2.5 py-1 rounded-md shadow-sm">총 누적 {totalVisits}회</span>
+                    <div className="flex gap-2.5 items-center">
+                        <span className="px-2.5 py-2 text-xs rounded-sm border border-border">{month + 1}월 {monthlyAttendanceCount}회</span>
+                        <span className="px-2.5 py-2 text-xs rounded-sm bg-primary text-white">총 {totalVisits}회</span>
                     </div>
                 </div>
 
-                <div className="grid grid-cols-7 gap-1 text-center text-[10px] mb-6 font-bold text-gray-400">
+                <div className="grid grid-cols-7 gap-1 text-center text-xs mb-6 font-bold text-text-800">
                     {['일','월','화','수','목','금','토'].map(d => <div key={d} className="mb-2">{d}</div>)}
 
                     {Array.from({ length: firstDayOfWeek }, (_, i) => <div key={`blank-${i}`} />)}
@@ -158,7 +158,7 @@ const HomeView = ({ db, appId, user, attendanceDays, passes, gearInfo, quests, a
                         const attended = hasAttended(day);
                         const isTodayFlag = isToday(day);
                         return (
-                            <div key={day} className={`aspect-square flex items-center justify-center rounded-2xl text-xs transition-all cursor-pointer hover:scale-110 ${attended ? 'bg-blue-600 text-white font-bold shadow-md' : isTodayFlag ? 'border-2 border-blue-600 text-blue-600 font-bold' : 'text-gray-600 font-medium hover:bg-gray-100'}`}>
+                            <div key={day} className={`aspect-square flex items-center justify-center rounded-full text-xs transition-all hover:scale-110 ${attended ? 'bg-primary text-white font-semibold' : isTodayFlag ? 'border-2 border-primary text-primary font-semibold' : 'text-text-800 font-medium hover:bg-gray-100'}`}>
                                 {day}
                             </div>
                         )
@@ -167,21 +167,21 @@ const HomeView = ({ db, appId, user, attendanceDays, passes, gearInfo, quests, a
 
                 <div className="mt-4">
                     {!showCheckInOptions ? (
-                        <button onClick={() => setShowCheckInOptions(true)} className="w-full py-4 bg-blue-600 text-white rounded-2xl font-bold tracking-widest shadow-xl hover:bg-blue-700 transition-all uppercase flex items-center justify-center gap-2">
-                            {isAttendedTodayForButton ? '한 번 더 출석하기 🐾' : '출석 체크하기 🐾'}
+                        <button onClick={() => setShowCheckInOptions(true)} className="w-full h-[38px] py-2.5 bg-secondary rounded-sm  text-xs text-white flex items-center justify-center gap-2">
+                            {isAttendedTodayForButton ? '한 번 더 출석하기' : '출석 체크하기'}
                         </button>
                     ) : (
-                        <div className="space-y-3 animate-in slide-in-from-top-2 duration-300 bg-gray-50 p-4 rounded-2xl border border-gray-100">
+                        <div className="space-y-3 animate-in slide-in-from-top-2 duration-300 bg-gray-50 rounded-sm p-2.5">
                             <div className="flex justify-between items-center mb-3">
-                                <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">출석 날짜 및 방법 선택</span>
-                                <button onClick={() => { setShowCheckInOptions(false); setAttendanceDate(new Date().toISOString().split('T')[0]); }} className="text-gray-400 hover:text-gray-600 p-1 bg-white rounded-full shadow-sm"><X className="w-4 h-4" /></button>
+                                <span className="text-xs text-text">출석 날짜 및 방법 선택</span>
+                                <button onClick={() => { setShowCheckInOptions(false); setAttendanceDate(new Date().toISOString().split('T')[0]); }} className="text-text"><X className="w-3.5 h-3.5" /></button>
                             </div>
 
-                            <div className="bg-white p-3.5 rounded-xl border border-gray-200 mb-3 shadow-sm flex items-center justify-between min-w-0">
-                                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest shrink-0 mr-2">출석 날짜</label>
+                            <div className="flex items-center justify-center min-w-0 px-3.5 h-[38px] rounded-sm border border-border bg-white">
+                                {/*<label className="text-xs text-text shrink-0 mr-4">출석 날짜</label>*/}
                                 <input
                                     type="date"
-                                    className="appearance-none bg-transparent outline-none text-sm font-bold text-gray-700 text-right w-full flex-1 min-w-0"
+                                    className="flex-1 w-full min-w-0 appearance-none bg-transparent outline-none text-xs text-text text-left "
                                     value={attendanceDate}
                                     onChange={e => setAttendanceDate(e.target.value)}
                                 />
@@ -190,28 +190,28 @@ const HomeView = ({ db, appId, user, attendanceDays, passes, gearInfo, quests, a
                             {passes.filter(p => p.remaining > 0 || p.type === 'period').length > 0 && (
                                 <div className="space-y-2">
                                     {passes.filter(p => p.remaining > 0 || p.type === 'period').map(p => (
-                                        <button key={p.id} onClick={() => handleAttendance(p.id, p.gym)} className="w-full p-4 bg-white border border-blue-100 text-blue-600 rounded-xl font-bold shadow-sm hover:bg-blue-50 transition-all flex justify-between items-center">
-                                            <span className="text-sm">{p.gym} <span className="text-xs font-medium text-blue-400">({p.name})</span></span>
-                                            <span className="text-xs bg-blue-100 text-blue-600 px-3 py-1.5 rounded-lg flex items-center gap-1"><CheckCircle2 className="w-3 h-3"/> 사용</span>
+                                        <button key={p.id} onClick={() => handleAttendance(p.id, p.gym)} className="w-full px-2.5 h-[38px] bg-white border border-text-secondary text-secondary text-xs rounded-sm hover:bg-amber-50 transition-all flex justify-between items-center">
+                                            <span className="text-xs font-medium">{p.gym} <span className="text-xs">({p.name})</span></span>
+                                            <span className="text-xs bg-secondary text-white px-2 py-1 rounded-sm flex items-center gap-1"><CheckCircle2 className="w-3 h-3"/> 사용</span>
                                         </button>
                                     ))}
                                 </div>
                             )}
 
-                            <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm space-y-3 mt-3">
-                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">이용권 없이 기본 출석 (직접 입력)</p>
+                            <div className="bg-white p-2.5 rounded-sm border border-border mt-3">
+                                <p className="text-xs  text-text mb-2">직접 입력</p>
                                 <div className="space-y-2">
                                     <input
-                                        placeholder="방문한 지점명 직접 입력 (예: 더클라임 연남)"
-                                        className="w-full min-w-0 bg-gray-50 p-3 rounded-lg border border-gray-100 outline-none focus:ring-2 focus:ring-blue-500 text-sm font-semibold text-gray-700"
+                                        placeholder="지점명"
+                                        className="w-full min-w-0 bg-gray-50 px-2.5 h-[38px] rounded-sm border border-border outline-none focus:ring-1 focus:ring-secondary text-xs font-semibold text-text"
                                         value={customAttGym}
                                         onChange={e => setCustomAttGym(e.target.value)}
                                     />
                                     <button
                                         onClick={() => handleAttendance(null, customAttGym)}
-                                        className="w-full py-3 mt-1 bg-gray-800 text-white rounded-lg font-bold text-sm shadow-md hover:bg-gray-700 transition-colors"
+                                        className="w-full px-2.5 h-[38px] bg-secondary text-white rounded-sm text-xs hover:bg-primary-800 transition-colors"
                                     >
-                                        {customAttGym.trim() === '' ? '기본 출석하기' : '이 지점으로 출석하기'}
+                                        출석하기
                                     </button>
                                 </div>
                             </div>
@@ -220,9 +220,9 @@ const HomeView = ({ db, appId, user, attendanceDays, passes, gearInfo, quests, a
                 </div>
             </section>
 
-            <section className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100">
-                <h3 className="font-bold text-gray-800 text-sm flex items-center gap-2 uppercase tracking-widest mb-4">
-                    <Flame className="w-5 h-5 text-orange-500" /> Daily Micro-Quests
+            <section className="bg-white p-5 rounded-lg border border-border">
+                <h3 className="font-bold text-text text-xs flex items-center gap-2 uppercase tracking-widest mb-4">
+                    <Flame className="w-5 h-5 text-secondary" /> Daily Micro-Quests
                 </h3>
 
                 <div className="grid grid-cols-3 gap-3">
@@ -276,7 +276,7 @@ const HomeView = ({ db, appId, user, attendanceDays, passes, gearInfo, quests, a
                 {passes.length === 0 && (
                     <div className="min-w-full p-8 bg-gray-50 rounded-3xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center text-center shadow-inner">
                         <Ticket className="w-8 h-8 text-gray-300 mb-3" />
-                        <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">등록된 이용권이 없습니다</p>
+                        <p className="text-xs text-text uppercase tracking-widest">등록된 이용권이 없습니다</p>
                     </div>
                 )}
             </div>
