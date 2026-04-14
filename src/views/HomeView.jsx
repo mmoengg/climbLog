@@ -149,7 +149,7 @@ const HomeView = ({ db, appId, user, attendanceDays, passes, gearInfo, quests, a
                     </div>
                 </div>
 
-                <div className="grid grid-cols-7 gap-1 text-center text-xs mb-6 font-bold text-text-800">
+                <div className="grid grid-cols-7 gap-1 text-center text-xs mb-4 font-bold text-text-800">
                     {['일','월','화','수','목','금','토'].map(d => <div key={d} className="mb-2">{d}</div>)}
 
                     {Array.from({ length: firstDayOfWeek }, (_, i) => <div key={`blank-${i}`} />)}
@@ -230,10 +230,10 @@ const HomeView = ({ db, appId, user, attendanceDays, passes, gearInfo, quests, a
                         <button
                             key={q.id}
                             onClick={() => handleQuestClick(q.id)}
-                            className={`relative aspect-square rounded-lg flex flex-col items-center justify-center transition-all border ${q.current === q.goal ? `${q.color} text-white border-transparent` : 'bg-white text-text-300 border-neutral-100 hover:border-primary'}`}
+                            className={`relative aspect-square rounded-sm flex flex-col items-center justify-center transition-all border ${q.current === q.goal ? `${q.color} text-white border-transparent` : 'bg-white text-text-300 border-neutral-100 hover:border-primary'}`}
                         >
                             {q.current === q.goal ? <CheckCircle2 className="w-6 h-6 mb-1" /> : getQuestIcon(q.icon)}
-                            <p className="text-xs font-bold mt-2 text-center px-1 leading-tight">{q.title}</p>
+                            <p className="text-xs font-semibold mt-2 text-center px-1 leading-tight">{q.title}</p>
                             <div className="mt-1.5 flex gap-1">
                                 {Array.from({ length: q.goal }).map((_, i) => (
                                     <div key={i} className={`w-1.5 h-1.5 rounded-full ${i < q.current ? (q.current === q.goal ? 'bg-white' : 'bg-primary') : 'bg-gray-200'}`} />
