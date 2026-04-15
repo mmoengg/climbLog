@@ -179,11 +179,11 @@ export default function App() {
     if (loading) return (
         <div className="h-screen flex flex-col items-center justify-center bg-white text-blue-600 gap-4">
             <Loader2 className="animate-spin w-10 h-10" />
-            <p className="font-bold uppercase tracking-widest animate-pulse">Climb Log Loading...</p>
+            <p className="font-bold uppercase animate-pulse">Climb Log Loading...</p>
         </div>
     );
 
-    if (!user) return <AuthScreen />;
+    if (!user) return <AuthScreen auth={auth} />;
 
     return (
         <MainLayout

@@ -1,17 +1,3 @@
-import {
-    Menu,
-    X,
-    Award,
-    Home,
-    Wallet,
-    Ticket,
-    PenSquare,
-    History as HistoryIcon,
-    Flame,
-    Trophy,
-    LogOut,
-} from 'lucide-react';
-import NavItem from './NavItem';
 import Header from "./Header.jsx";
 import Sidebar from "./Sidebar.jsx";
 import BottomNav from "./BottomNav.jsx";

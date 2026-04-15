@@ -106,8 +106,8 @@ const HistoryView = ({ db, appId, user, attendanceHistory, attendanceDays, gearI
 
     return (
         <div className="space-y-5 animate-in fade-in pb-10">
-            <section className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
-                <h3 className="font-bold text-gray-800 text-sm flex items-center gap-2 uppercase tracking-widest mb-6">
+            <section className="bg-white p-6 rounded-3xl border border-gray-100">
+                <h3 className="font-bold text-gray-800 text-sm flex items-center gap-2 uppercase mb-6">
                     <HistoryIcon className="w-5 h-5 text-blue-600" /> Attendance History
                 </h3>
 
@@ -126,38 +126,38 @@ const HistoryView = ({ db, appId, user, attendanceHistory, attendanceDays, gearI
                             const isEditing = editingDateKey === dateKey;
 
                             return (
-                                <div key={dateKey} className="bg-gray-50 p-4 rounded-2xl border border-gray-100 shadow-sm transition-all min-w-0">
+                                <div key={dateKey} className="bg-gray-50 p-4 rounded-2xl border border-gray-100 transition-all min-w-0">
                                     {isEditing ? (
                                         <div className="space-y-3 animate-in fade-in min-w-0">
                                             <div className="flex justify-between items-center border-b border-gray-200 pb-2 mb-2">
-                                                <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">기록 수정하기</span>
+                                                <span className="text-xs font-bold text-gray-500 uppercase">기록 수정하기</span>
                                             </div>
                                             <div className="space-y-2">
-                                                <div className="flex items-center justify-between bg-white p-3.5 rounded-xl border border-gray-200 shadow-sm min-w-0">
-                                                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest shrink-0 mr-2">날짜</label>
+                                                <div className="flex items-center justify-between bg-white p-3.5 rounded-xl border border-gray-200 min-w-0">
+                                                    <label className="text-xs font-bold text-gray-400 uppercase shrink-0 mr-2">날짜</label>
                                                     <input type="date" value={editDate} onChange={e => setEditDate(e.target.value)} className="appearance-none bg-transparent outline-none text-sm font-bold text-gray-700 text-right w-full flex-1 min-w-0" />
                                                 </div>
-                                                <div className="flex items-center justify-between bg-white p-3.5 rounded-xl border border-gray-200 shadow-sm min-w-0">
-                                                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest shrink-0 mr-2">암장명</label>
+                                                <div className="flex items-center justify-between bg-white p-3.5 rounded-xl border border-gray-200 min-w-0">
+                                                    <label className="text-xs font-bold text-gray-400 uppercase shrink-0 mr-2">암장명</label>
                                                     <input type="text" value={editGymName} onChange={e => setEditGymName(e.target.value)} placeholder="암장명 입력" className="appearance-none bg-transparent outline-none text-sm font-bold text-gray-700 text-right w-full flex-1 min-w-0" />
                                                 </div>
                                             </div>
                                             <div className="flex gap-2 justify-end mt-3">
                                                 <button onClick={() => setEditingDateKey(null)} className="px-4 py-3 rounded-xl bg-gray-200 hover:bg-gray-300 text-gray-600 text-xs font-bold transition-colors w-1/3">취소</button>
-                                                <button onClick={() => handleEditSave(dateKey)} disabled={saving} className="px-4 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-colors shadow-sm w-2/3">{saving ? '저장중...' : '수정 완료'}</button>
+                                                <button onClick={() => handleEditSave(dateKey)} disabled={saving} className="px-4 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-colors w-2/3">{saving ? '저장중...' : '수정 완료'}</button>
                                             </div>
                                         </div>
                                     ) : (
                                         <div className="flex justify-between items-center min-w-0">
                                             <div className="flex items-center gap-3 min-w-0 pr-2">
-                          <span className="text-xs font-bold text-blue-600 bg-white px-3 py-1.5 rounded-lg border border-gray-100 shadow-sm whitespace-nowrap shrink-0">
+                          <span className="text-xs font-bold text-blue-600 bg-white px-3 py-1.5 rounded-lg border border-gray-100 whitespace-nowrap shrink-0">
                             {displayDate}
                           </span>
                                                 <span className="text-sm font-bold text-gray-800 truncate">{gymName}</span>
                                             </div>
                                             <div className="flex items-center gap-1.5 shrink-0">
-                                                <button onClick={() => handleEditClick(dateKey, gymName)} className="p-2 bg-white rounded-xl border border-gray-100 text-gray-400 hover:text-blue-600 shadow-sm transition-colors"><Edit className="w-3.5 h-3.5" /></button>
-                                                <button onClick={() => handleDelete(dateKey)} className="p-2 bg-white rounded-xl border border-gray-100 text-gray-400 hover:text-rose-500 shadow-sm transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
+                                                <button onClick={() => handleEditClick(dateKey, gymName)} className="p-2 bg-white rounded-xl border border-gray-100 text-gray-400 hover:text-blue-600 transition-colors"><Edit className="w-3.5 h-3.5" /></button>
+                                                <button onClick={() => handleDelete(dateKey)} className="p-2 bg-white rounded-xl border border-gray-100 text-gray-400 hover:text-rose-500 transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
                                             </div>
                                         </div>
                                     )}
@@ -166,7 +166,7 @@ const HistoryView = ({ db, appId, user, attendanceHistory, attendanceDays, gearI
                         })
                     ) : (
                         <div className="text-center py-10 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
-                            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">출석 기록이 없습니다</p>
+                            <p className="text-xs font-bold text-gray-400 uppercase">출석 기록이 없습니다</p>
                         </div>
                     )}
                 </div>

@@ -92,9 +92,9 @@ const PassManagementView = ({  db, appId, user, passes, uniqueBrands, uniqueGyms
 
     return (
         <div className="space-y-8 animate-in fade-in pb-10">
-            <section className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
+            <section className="bg-white p-6 rounded-3xl border border-gray-100">
                 <div className="flex justify-between items-center mb-6">
-                    <h3 className="text-sm font-bold text-gray-800 uppercase tracking-widest flex items-center gap-2">
+                    <h3 className="text-sm font-bold text-gray-800 uppercase flex items-center gap-2">
                         <Ticket className="w-5 h-5 text-gray-800" />
                         티켓 등록 관리
                     </h3>
@@ -102,7 +102,7 @@ const PassManagementView = ({  db, appId, user, passes, uniqueBrands, uniqueGyms
 
                 <form onSubmit={handleAddPass} className="space-y-4">
                     <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-1">브랜드 선택 (공통 사용)</label>
+                        <label className="text-xs font-bold text-gray-400 uppercase px-1">브랜드 선택 (공통 사용)</label>
                         <select value={selectedBrand} onChange={e => setSelectedBrand(e.target.value)} className="w-full min-w-0 bg-gray-50 p-3.5 rounded-xl border border-gray-100 outline-none focus:ring-2 focus:ring-blue-500 text-sm font-semibold text-gray-800">
                             {uniqueBrands.map(b => <option key={b} value={b}>{b}</option>)}
                             <option value="manual">직접 입력 (+)</option>
@@ -114,7 +114,7 @@ const PassManagementView = ({  db, appId, user, passes, uniqueBrands, uniqueGyms
 
                     <div className="space-y-3">
                         <div className="space-y-1">
-                            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-1">이용권 종류</label>
+                            <label className="text-xs font-bold text-gray-400 uppercase px-1">이용권 종류</label>
                             <select value={type} onChange={e => setType(e.target.value)} className="w-full min-w-0 bg-gray-50 p-3.5 rounded-xl border border-gray-100 outline-none focus:ring-2 focus:ring-blue-500 text-sm font-semibold text-gray-800">
                                 <option value="punch">횟수권</option>
                                 <option value="period">기간권</option>
@@ -123,8 +123,8 @@ const PassManagementView = ({  db, appId, user, passes, uniqueBrands, uniqueGyms
 
                         {type === 'punch' ? (
                             <div className="space-y-2 bg-orange-50/50 p-4 rounded-2xl border border-orange-100">
-                                <div className="flex items-center justify-between mb-3 bg-white p-3 rounded-xl border border-orange-100 shadow-sm min-w-0">
-                                    <label className="text-[10px] text-orange-800 font-bold uppercase tracking-widest shrink-0 mr-2">전체 횟수 설정</label>
+                                <div className="flex items-center justify-between mb-3 bg-white p-3 rounded-xl border border-orange-100 min-w-0">
+                                    <label className="text-xs text-orange-800 font-bold uppercase shrink-0 mr-2">전체 횟수 설정</label>
                                     <select value={total} onChange={e => setTotal(Number(e.target.value))} className="bg-transparent outline-none text-xs font-bold text-orange-700 min-w-0 text-right">
                                         <option value={5}>5회</option>
                                         <option value={10}>10회</option>
@@ -133,19 +133,19 @@ const PassManagementView = ({  db, appId, user, passes, uniqueBrands, uniqueGyms
                                         <option value={30}>30회</option>
                                     </select>
                                 </div>
-                                <div className="flex items-center justify-between bg-white p-3.5 rounded-xl border border-gray-200 shadow-sm min-w-0">
-                                    <label className="text-[10px] text-gray-500 font-bold uppercase tracking-widest shrink-0 mr-2">구매일</label>
+                                <div className="flex items-center justify-between bg-white p-3.5 rounded-xl border border-gray-200 min-w-0">
+                                    <label className="text-xs text-gray-500 font-bold uppercase shrink-0 mr-2">구매일</label>
                                     <input type="date" className="appearance-none bg-transparent outline-none text-sm font-bold text-gray-700 text-right w-full flex-1 min-w-0" value={startDate} onChange={e => setStartDate(e.target.value)} required />
                                 </div>
-                                <div className="flex items-center justify-between bg-white p-3.5 rounded-xl border border-rose-200 shadow-sm min-w-0">
-                                    <label className="text-[10px] text-rose-500 font-bold uppercase tracking-widest shrink-0 mr-2">유효기간 (만료일)</label>
+                                <div className="flex items-center justify-between bg-white p-3.5 rounded-xl border border-rose-200 min-w-0">
+                                    <label className="text-xs text-rose-500 font-bold uppercase shrink-0 mr-2">유효기간 (만료일)</label>
                                     <input type="date" className="appearance-none bg-transparent outline-none text-sm font-bold text-rose-700 text-right w-full flex-1 min-w-0" value={endDate} onChange={e => setEndDate(e.target.value)} required />
                                 </div>
                             </div>
                         ) : (
                             <div className="space-y-2 bg-blue-50/50 p-4 rounded-2xl border border-blue-100">
-                                <div className="flex items-center justify-between mb-3 bg-white p-3 rounded-xl border border-blue-100 shadow-sm min-w-0">
-                                    <label className="text-[10px] text-blue-800 font-bold uppercase tracking-widest shrink-0 mr-2">기간 설정</label>
+                                <div className="flex items-center justify-between mb-3 bg-white p-3 rounded-xl border border-blue-100 min-w-0">
+                                    <label className="text-xs text-blue-800 font-bold uppercase shrink-0 mr-2">기간 설정</label>
                                     <select value={months} onChange={e => setMonths(Number(e.target.value))} className="bg-transparent outline-none text-xs font-bold text-blue-700 min-w-0 text-right">
                                         <option value={1}>1개월</option>
                                         <option value={3}>3개월</option>
@@ -153,25 +153,25 @@ const PassManagementView = ({  db, appId, user, passes, uniqueBrands, uniqueGyms
                                         <option value={12}>12개월</option>
                                     </select>
                                 </div>
-                                <div className="flex items-center justify-between bg-white p-3.5 rounded-xl border border-gray-200 shadow-sm min-w-0">
-                                    <label className="text-[10px] text-gray-500 font-bold uppercase tracking-widest shrink-0 mr-2">시작일</label>
+                                <div className="flex items-center justify-between bg-white p-3.5 rounded-xl border border-gray-200 min-w-0">
+                                    <label className="text-xs text-gray-500 font-bold uppercase shrink-0 mr-2">시작일</label>
                                     <input type="date" className="appearance-none bg-transparent outline-none text-sm font-bold text-gray-700 text-right w-full flex-1 min-w-0" value={startDate} onChange={e => setStartDate(e.target.value)} required />
                                 </div>
-                                <div className="flex items-center justify-between bg-white p-3.5 rounded-xl border border-rose-200 shadow-sm min-w-0">
-                                    <label className="text-[10px] text-rose-500 font-bold uppercase tracking-widest shrink-0 mr-2">만료일 (자동계산)</label>
+                                <div className="flex items-center justify-between bg-white p-3.5 rounded-xl border border-rose-200 min-w-0">
+                                    <label className="text-xs text-rose-500 font-bold uppercase shrink-0 mr-2">만료일 (자동계산)</label>
                                     <input type="date" className="appearance-none bg-transparent outline-none text-sm font-bold text-rose-700 text-right w-full flex-1 min-w-0" value={endDate} onChange={e => setEndDate(e.target.value)} required />
                                 </div>
                             </div>
                         )}
                     </div>
 
-                    <button disabled={savingPass} className={`w-full py-4 mt-2 text-white rounded-2xl font-bold uppercase tracking-widest shadow-xl transition-all disabled:opacity-50 bg-gray-900 hover:bg-gray-800`}>
+                    <button disabled={savingPass} className={`w-full py-4 mt-2 text-white rounded-2xl font-bold uppercase shadow-xl transition-all disabled:opacity-50 bg-gray-900 hover:bg-gray-800`}>
                         {savingPass ? '처리 중...' : 'REGISTER TICKET 💳'}
                     </button>
                 </form>
 
                 <div className="mt-8 space-y-3">
-                    <h3 className="text-[10px] text-gray-400 uppercase font-bold px-2 tracking-widest mb-3 border-t border-gray-100 pt-6">All Registered Tickets</h3>
+                    <h3 className="text-xs text-gray-400 uppercase font-bold px-2 mb-3 border-t border-gray-100 pt-6">All Registered Tickets</h3>
                     {passes.map(p => (
                         <div key={p.id} className={`p-4 rounded-2xl border flex justify-between items-center transition-all bg-gray-50 border-gray-100 min-w-0`}>
                             <div className="flex-1 min-w-0 pr-2">
@@ -183,13 +183,13 @@ const PassManagementView = ({  db, appId, user, passes, uniqueBrands, uniqueGyms
                                     {p.name} {p.type === 'punch' && <span className="text-orange-500 ml-1">({p.remaining}회 남음)</span>}
                                 </p>
                                 {p.start && p.end && (
-                                    <p className="text-[10px] text-gray-500 mt-1 flex items-center gap-1 truncate">
+                                    <p className="text-xs text-gray-500 mt-1 flex items-center gap-1 truncate">
                                         <CalendarDays className="w-3 h-3 shrink-0" /> {p.start} ~ <span className="text-rose-500 font-bold">{p.end}</span>
                                     </p>
                                 )}
                             </div>
                             <div className="flex flex-col gap-2 shrink-0">
-                                <button onClick={() => handleDeletePass(p.id)} className="text-gray-400 hover:text-rose-500 bg-white p-2 rounded-xl shadow-sm border border-gray-100 transition-colors"><Trash2 className="w-4 h-4" /></button>
+                                <button onClick={() => handleDeletePass(p.id)} className="text-gray-400 hover:text-rose-500 bg-white p-2 rounded-xl border border-gray-100 transition-colors"><Trash2 className="w-4 h-4" /></button>
                             </div>
                         </div>
                     ))}
@@ -197,13 +197,13 @@ const PassManagementView = ({  db, appId, user, passes, uniqueBrands, uniqueGyms
                 </div>
             </section>
 
-            <section className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
-                <h3 className="text-sm font-bold text-gray-800 uppercase tracking-widest mb-6 flex items-center gap-2">
+            <section className="bg-white p-6 rounded-3xl border border-gray-100">
+                <h3 className="text-sm font-bold text-gray-800 uppercase mb-6 flex items-center gap-2">
                     <Car className="w-5 h-5 text-blue-600" /> 지점별 주차장 관리
                 </h3>
                 <form onSubmit={handleSaveParking} className="space-y-4">
                     <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-1">방문하는 지점 선택</label>
+                        <label className="text-xs font-bold text-gray-400 uppercase px-1">방문하는 지점 선택</label>
                         <select value={selectedParkGym} onChange={e => setSelectedParkGym(e.target.value)} className="w-full min-w-0 bg-gray-50 p-3.5 rounded-xl border border-gray-100 outline-none focus:ring-2 focus:ring-blue-500 text-sm font-semibold text-gray-800">
                             {uniqueGyms.map(g => <option key={g} value={g}>{g}</option>)}
                             <option value="manual">직접 입력 (+)</option>
@@ -215,20 +215,20 @@ const PassManagementView = ({  db, appId, user, passes, uniqueBrands, uniqueGyms
 
                     <input placeholder="해당 지점의 주차 조건 (예: 건물 지하 불가)" className="w-full min-w-0 bg-gray-50 p-3.5 rounded-xl border border-gray-100 outline-none focus:ring-2 focus:ring-blue-500 text-sm font-semibold text-gray-800" value={parkingMemo} onChange={e => setParkingMemo(e.target.value)} required />
 
-                    <button disabled={savingPark} className="w-full py-4 mt-2 bg-blue-600 text-white rounded-2xl font-bold uppercase tracking-widest shadow-xl shadow-blue-200 hover:bg-blue-700 transition-colors disabled:opacity-50">
+                    <button disabled={savingPark} className="w-full py-4 mt-2 bg-blue-600 text-white rounded-2xl font-bold uppercase shadow-xl shadow-blue-200 hover:bg-blue-700 transition-colors disabled:opacity-50">
                         {savingPark ? '저장 중...' : 'SAVE PARKING INFO 🚗'}
                     </button>
                 </form>
 
                 <div className="mt-6 space-y-2">
-                    <h3 className="text-[10px] text-gray-400 uppercase font-bold px-2 tracking-widest mb-3 border-t border-gray-100 pt-6">Saved Parking Infos</h3>
+                    <h3 className="text-xs text-gray-400 uppercase font-bold px-2 mb-3 border-t border-gray-100 pt-6">Saved Parking Infos</h3>
                     {Object.entries(parkingInfo).map(([gymName, info]) => (
                         <div key={gymName} className="bg-gray-50 p-4 rounded-2xl border border-gray-100 flex justify-between items-center min-w-0">
                             <div className="min-w-0 pr-2">
                                 <h4 className="text-sm font-bold text-gray-800 truncate">{gymName}</h4>
                                 <p className="text-[11px] text-blue-600 font-bold mt-0.5 truncate">{info}</p>
                             </div>
-                            <button onClick={() => handleDeleteParking(gymName)} className="text-gray-400 hover:text-rose-500 hover:bg-white p-2 rounded-xl transition-colors shadow-sm shrink-0"><Trash2 className="w-4 h-4" /></button>
+                            <button onClick={() => handleDeleteParking(gymName)} className="text-gray-400 hover:text-rose-500 hover:bg-white p-2 rounded-xl transition-colors shrink-0"><Trash2 className="w-4 h-4" /></button>
                         </div>
                     ))}
                     {Object.keys(parkingInfo).length === 0 && <p className="text-center text-xs text-gray-400 py-6 border border-dashed border-gray-200 rounded-xl bg-gray-50/50">저장된 주차 정보가 없습니다.</p>}

@@ -134,7 +134,7 @@ const HomeView = ({ db, appId, user, attendanceDays, passes, gearInfo, quests, a
     const isAttendedTodayForButton = !!attendanceHistory[todayDateStr];
 
     return (
-        <div className="space-y-5 animate-in fade-in duration-700">
+        <div className="space-y-4 animate-in fade-in duration-700">
             <section className="p-5 rounded-lg  border border-border bg-white">
                 <div className="flex justify-between items-center mb-5">
                     <div className="flex items-center gap-1">
@@ -221,7 +221,7 @@ const HomeView = ({ db, appId, user, attendanceDays, passes, gearInfo, quests, a
             </section>
 
             <section className="bg-white p-5 rounded-lg border border-border">
-                <h3 className="text-text text-sm font-semibold flex items-center gap-1.5 uppercase tracking-widest mb-4">
+                <h3 className="text-text text-sm font-semibold flex items-center gap-1.5 mb-4">
                     <Flame className="w-5 h-5 text-secondary" /> Daily Micro-Quests
                 </h3>
 
@@ -261,8 +261,8 @@ const HomeView = ({ db, appId, user, attendanceDays, passes, gearInfo, quests, a
 
                         {p.type === 'punch' && (
                             <div className="mt-5 space-y-2">
-                                <div className="flex justify-between text-[10px]">
-                                    <span className={`${p.type === 'period' ? 'text-white' : 'text-text-500'} uppercase tracking-widest`}>Remaining</span>
+                                <div className="flex justify-between text-xs">
+                                    <span className={`${p.type === 'period' ? 'text-white' : 'text-text-500'} uppercase`}>Remaining</span>
                                     <span className={`${p.type === 'period' ? 'text-white' : 'text-secondary  font-semibold'}`}>{p.remaining} / {p.total}</span>
                                 </div>
                                 <div className="flex gap-1 h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
@@ -276,7 +276,7 @@ const HomeView = ({ db, appId, user, attendanceDays, passes, gearInfo, quests, a
                 {passes.length === 0 && (
                     <div className="min-w-full p-8 bg-gray-50 rounded-3xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center text-center shadow-inner">
                         <Ticket className="w-8 h-8 text-gray-300 mb-3" />
-                        <p className="text-xs text-text uppercase tracking-widest">등록된 이용권이 없습니다</p>
+                        <p className="text-xs text-text uppercase">등록된 이용권이 없습니다</p>
                     </div>
                 )}
             </div>
@@ -304,7 +304,7 @@ const HomeView = ({ db, appId, user, attendanceDays, passes, gearInfo, quests, a
                 ) : (
                     <form onSubmit={handleRegisterShoe} className="space-y-3 animate-in fade-in slide-in-from-right-4">
                         <div className="flex justify-between items-center mb-2 border-b border-gray-100 pb-2">
-                            <h4 className="text-xs font-bold text-gray-800 uppercase tracking-widest flex items-center gap-2"><Footprints className="w-4 h-4 text-primary"/> 새 암벽화 등록</h4>
+                            <h4 className="text-xs font-bold text-gray-800 uppercase flex items-center gap-2"><Footprints className="w-4 h-4 text-primary"/> 새 암벽화 등록</h4>
                             <button type="button" onClick={() => setShowShoeForm(false)} className="text-gray-400 hover:text-gray-600 p-1"><X className="w-4 h-4" /></button>
                         </div>
                         <input
@@ -315,17 +315,17 @@ const HomeView = ({ db, appId, user, attendanceDays, passes, gearInfo, quests, a
                             required
                         />
                         <div className="flex items-center justify-between bg-gray-50 p-3 rounded-xl border border-gray-100 min-w-0">
-                            <label className="text-xs text-gray-500 font-bold uppercase tracking-widest shrink-0">예상 수명(출석 횟수)</label>
+                            <label className="text-xs text-gray-500 font-bold uppercase shrink-0">예상 수명(출석 횟수)</label>
                             <input
                                 type="number"
-                                className="bg-white min-w-0 p-2 rounded-lg border border-gray-200 outline-none focus:ring-2 focus:ring-pr   blue-500 text-sm font-bold w-20 text-center shadow-sm"
+                                className="bg-white min-w-0 p-2 rounded-lg border border-gray-200 outline-none focus:ring-2 focus:ring-pr   blue-500 text-sm font-bold w-20 text-center"
                                 value={shoeMaxInput}
                                 onChange={e => setShoeMaxInput(e.target.value)}
                                 min="1"
                                 required
                             />
                         </div>
-                        <button type="submit" className="w-full py-3 bg-gray-900 text-white rounded-xl font-bold text-xs tracking-widest uppercase shadow-md hover:bg-gray-800 transition-colors">
+                        <button type="submit" className="w-full py-3 bg-gray-900 text-white rounded-xl font-bold text-xs uppercase shadow-md hover:bg-gray-800 transition-colors">
                             등록하고 사용 횟수 0으로 초기화
                         </button>
                     </form>

@@ -1,4 +1,4 @@
-import {Home, Menu} from 'lucide-react';
+import {Home, Menu, PenSquare, Ticket, Wallet} from 'lucide-react';
 
 const Header = ({ user, activeTab, setIsMenuOpen }) => {
     const getHeaderTitle = () => {
@@ -14,13 +14,17 @@ const Header = ({ user, activeTab, setIsMenuOpen }) => {
     return (
         <header>
             <div className="flex items-center justify-between px-4 h-12 bg-primary-800 ">
-                <h1 className="text-white font-extrabold text-xs uppercase tracking-widest">climblog</h1>
+                <h1 className="text-white font-extrabold text-xs uppercase">climblog</h1>
                 <button onClick={() => setIsMenuOpen(true)}>
                     <Menu className="w-5 h-5 text-white" />
                 </button>
             </div>
             <div className="flex items-center gap-1.5 px-4 h-12 border-b-border bg-white">
-                <Home className="w-4 h-4" />
+                {activeTab === 'home' && <Home className="w-4 h-4" />}
+                {activeTab === 'expenses' && <Wallet className="w-4 h-4" />}
+                {activeTab === 'passes' && <Ticket className="w-4 h-4" />}
+                {activeTab === 'record' && <PenSquare className="w-4 h-4" />}
+
                 <h2 className="text-sm text-text font-semibold tracking-tight">
                     {getHeaderTitle()}
                 </h2>
