@@ -102,13 +102,13 @@ const PassManagementView = ({  db, appId, user, passes, uniqueBrands, uniqueGyms
 
                 <form onSubmit={handleAddPass} className="space-y-4">
                     <div className="space-y-2">
-                        <label className="text-xs text-text block">브랜드 선택 (공통 사용)</label>
+                        <label className="text-xs text-text block">암장 선택</label>
                         <select value={selectedBrand} onChange={e => setSelectedBrand(e.target.value)} className="w-full min-w-0 h-[38px]  px-2.5 rounded-sm border border-border outline-none focus:ring-1 focus:ring-primary text-xs text-text">
                             {uniqueBrands.map(b => <option key={b} value={b}>{b}</option>)}
                             <option value="manual">직접 입력 (+)</option>
                         </select>
                         {selectedBrand === 'manual' && (
-                            <input placeholder="새로운 브랜드명 (예: 알레)" className="w-full min-w-0 h-[38px]  px-2.5 rounded-sm border border-border outline-none focus:ring-1 focus:ring-primary text-xs text-text animate-in slide-in-from-top-2" value={customBrand} onChange={e => setCustomBrand(e.target.value)} required />
+                            <input placeholder="새로운 암장명 (예: 알레)" className="w-full min-w-0 h-[38px]  px-2.5 rounded-sm border border-border outline-none focus:ring-1 focus:ring-primary text-xs text-text animate-in slide-in-from-top-2" value={customBrand} onChange={e => setCustomBrand(e.target.value)} required />
                         )}
                     </div>
 
@@ -171,8 +171,10 @@ const PassManagementView = ({  db, appId, user, passes, uniqueBrands, uniqueGyms
                     </button>
                 </form>
 
-                <div className="mt-5 space-y-4">
-                    <h3 className="text-xs font-semibold text-primary-500 border-t border-border pt-6">All Registered Tickets</h3>
+                <div className="mt-5 space-y-2">
+                    <h3 className="text-xs text-text border-t border-border pt-4">
+                        {/*All Registered Tickets*/}
+                    </h3>
                     {passes.map(p => (
                         <div key={p.id} className={`p-4 rounded-sm border flex justify-between items-center transition-all bg-gray-50 border-gray-100 min-w-0`}>
                             <div className="flex-1 min-w-0 pr-2">
@@ -190,7 +192,7 @@ const PassManagementView = ({  db, appId, user, passes, uniqueBrands, uniqueGyms
                                 )}
                             </div>
                             <div className="flex flex-col gap-2 shrink-0">
-                                <button onClick={() => handleDeletePass(p.id)} className="text-gray-400 hover:text-rose-500 bg-white p-2 rounded-sm border border-border transition-colors"><Trash2 className="w-4 h-4" /></button>
+                                <button onClick={() => handleDeletePass(p.id)} className="text-gray-400 hover:text-rose-500 bg-white p-2 rounded-sm border border-border transition-colors"><Trash2 className="w-3 h-3" /></button>
                             </div>
                         </div>
                     ))}
@@ -220,15 +222,17 @@ const PassManagementView = ({  db, appId, user, passes, uniqueBrands, uniqueGyms
                     </button>
                 </form>
 
-                <div className="mt-5 space-y-3">
-                    <h3 className="text-xs font-semibold text-primary-500 border-t border-border pt-6">Saved Parking Infos</h3>
+                <div className="mt-5 space-y-2">
+                    <h3 className="text-xs text-text border-t border-border pt-4">
+                        {/*Saved Parking Infos*/}
+                    </h3>
                     {Object.entries(parkingInfo).map(([gymName, info]) => (
                         <div key={gymName} className="bg-gray-50 p-4 rounded-sm border border-border flex justify-between items-center min-w-0">
                             <div className="min-w-0 pr-2">
                                 <h4 className="text-xs font-bold text-gray-800 truncate">{gymName}</h4>
                                 <p className="text-xs text-blue-600  mt-0.5 truncate">{info}</p>
                             </div>
-                            <button onClick={() => handleDeleteParking(gymName)} className="text-gray-400 hover:text-rose-500 hover:bg-white p-2 rounded-xl transition-colors shrink-0"><Trash2 className="w-4 h-4" /></button>
+                            <button onClick={() => handleDeleteParking(gymName)} className="text-gray-400 hover:text-rose-500 bg-white p-2 rounded-sm border border-border transition-colors"><Trash2 className="w-3 h-3" /></button>
                         </div>
                     ))}
                     {Object.keys(parkingInfo).length === 0 && <p className="text-center text-xs text-gray-400 py-6 border border-dashed border-gray-200 rounded-xl bg-gray-50/50">저장된 주차 정보가 없습니다.</p>}
