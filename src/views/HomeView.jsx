@@ -274,7 +274,7 @@ const HomeView = ({ db, appId, user, attendanceDays, passes, gearInfo, quests, a
                 ))}
 
                 {passes.length === 0 && (
-                    <div className="min-w-full p-8 bg-gray-50 rounded-3xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center text-center shadow-inner">
+                    <div className="min-w-full p-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200 flex flex-col items-center justify-center text-center shadow-inner">
                         <Ticket className="w-8 h-8 text-gray-300 mb-3" />
                         <p className="text-xs text-text uppercase">등록된 이용권이 없습니다</p>
                     </div>
@@ -297,7 +297,7 @@ const HomeView = ({ db, appId, user, attendanceDays, passes, gearInfo, quests, a
                                 </p>
                             </div>
                         </div>
-                        <button onClick={() => setShowShoeForm(true)} className="p-2.5 text-gray-400 hover:text-primary hover:bg-blue-50 rounded-xl transition-colors border border-gray-100">
+                        <button onClick={() => setShowShoeForm(true)} className="p-2.5 text-gray-400 hover:text-primary hover:bg-blue-50 rounded-xl transition-colors border border-border">
                             <Edit className="w-4 h-4" />
                         </button>
                     </div>
@@ -309,12 +309,12 @@ const HomeView = ({ db, appId, user, attendanceDays, passes, gearInfo, quests, a
                         </div>
                         <input
                             placeholder="암벽화 이름 (예: VSR, 드론)"
-                            className="w-full min-w-0 bg-gray-50 p-3 rounded-xl border border-gray-100 outline-none focus:ring-2 focus:ring-primary text-sm font-semibold text-gray-800"
+                            className="w-full min-w-0 bg-gray-50 p-3 rounded-xl border border-border outline-none focus:ring-2 focus:ring-primary text-sm font-semibold text-gray-800"
                             value={shoeNameInput}
                             onChange={e => setShoeNameInput(e.target.value)}
                             required
                         />
-                        <div className="flex items-center justify-between bg-gray-50 p-3 rounded-xl border border-gray-100 min-w-0">
+                        <div className="flex items-center justify-between bg-gray-50 p-3 rounded-xl border border-border min-w-0">
                             <label className="text-xs text-gray-500 font-bold uppercase shrink-0">예상 수명(출석 횟수)</label>
                             <input
                                 type="number"

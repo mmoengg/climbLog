@@ -12,7 +12,7 @@ const QuestHistoryView = ({ db, appId, quests, questHistory }) => {
 
     return (
         <div className="space-y-5 animate-in fade-in pb-10">
-            <section className="bg-white p-6 rounded-3xl border border-gray-100">
+            <section className="bg-white p-6 rounded-lg border border-border">
                 <div className="flex justify-between items-center mb-6">
                     <h3 className="font-bold text-gray-800 text-sm flex items-center gap-2 uppercase">
                         <Flame className="w-5 h-5 text-orange-500" /> Current Quests
@@ -51,7 +51,7 @@ const QuestHistoryView = ({ db, appId, quests, questHistory }) => {
                 </div>
             </section>
 
-            <section className="bg-white p-6 rounded-3xl border border-gray-100">
+            <section className="bg-white p-6 rounded-lg border border-border">
                 <h3 className="font-bold text-gray-800 text-sm flex items-center gap-2 uppercase mb-6">
                     <HistoryIcon className="w-5 h-5 text-orange-500" /> Completed History
                 </h3>
@@ -63,7 +63,7 @@ const QuestHistoryView = ({ db, appId, quests, questHistory }) => {
                             const displayDate = `${parseInt(month)}월 ${parseInt(day)}일`;
 
                             return (
-                                <div key={dateKey} className="flex justify-between items-center bg-gray-50 p-4 rounded-2xl border border-gray-100 min-w-0">
+                                <div key={dateKey} className="flex justify-between items-center bg-gray-50 p-4 rounded-2xl border border-border min-w-0">
                 <span className="text-xs font-bold text-orange-600 bg-white px-3 py-1.5 rounded-lg border border-orange-100 whitespace-nowrap shrink-0">
                   {displayDate}
                 </span>

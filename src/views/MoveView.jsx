@@ -3,14 +3,14 @@ import React from "react";
 
 const MoveView = ({ db, appId, moves }) => (
     <div className="space-y-4 pb-10 animate-in fade-in">
-        <div className="bg-white p-6 rounded-3xl border border-gray-100">
+        <div className="bg-white p-6 rounded-lg border border-border">
             <h3 className="text-gray-400 text-xs uppercase font-bold mb-2">Technique Progress</h3>
             <div className="w-full bg-gray-100 h-2.5 rounded-full mt-2 overflow-hidden shadow-inner">
                 <div className="bg-blue-600 h-full w-[45%] rounded-full" />
             </div>
         </div>
         {moves.map(m => (
-            <div key={m.id} className="bg-white p-5 rounded-3xl border border-gray-100 space-y-4">
+            <div key={m.id} className="bg-white p-5 rounded-lg border border-border space-y-4">
                 <div className="flex items-center gap-3">
                     <div className="p-2.5 bg-blue-50 text-blue-600 rounded-xl"><Footprints className="w-4 h-4" /></div>
                     <div><h5 className="text-sm font-bold text-gray-800">{m.title}</h5><p className="text-xs text-gray-500 font-medium mt-0.5">{m.desc}</p></div>

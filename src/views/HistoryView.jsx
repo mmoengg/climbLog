@@ -106,7 +106,7 @@ const HistoryView = ({ db, appId, user, attendanceHistory, attendanceDays, gearI
 
     return (
         <div className="space-y-5 animate-in fade-in pb-10">
-            <section className="bg-white p-6 rounded-3xl border border-gray-100">
+            <section className="bg-white p-6 rounded-lg border border-border">
                 <h3 className="font-bold text-gray-800 text-sm flex items-center gap-2 uppercase mb-6">
                     <HistoryIcon className="w-5 h-5 text-blue-600" /> Attendance History
                 </h3>
@@ -126,7 +126,7 @@ const HistoryView = ({ db, appId, user, attendanceHistory, attendanceDays, gearI
                             const isEditing = editingDateKey === dateKey;
 
                             return (
-                                <div key={dateKey} className="bg-gray-50 p-4 rounded-2xl border border-gray-100 transition-all min-w-0">
+                                <div key={dateKey} className="bg-gray-50 p-4 rounded-2xl border border-border transition-all min-w-0">
                                     {isEditing ? (
                                         <div className="space-y-3 animate-in fade-in min-w-0">
                                             <div className="flex justify-between items-center border-b border-gray-200 pb-2 mb-2">
@@ -150,14 +150,14 @@ const HistoryView = ({ db, appId, user, attendanceHistory, attendanceDays, gearI
                                     ) : (
                                         <div className="flex justify-between items-center min-w-0">
                                             <div className="flex items-center gap-3 min-w-0 pr-2">
-                          <span className="text-xs font-bold text-blue-600 bg-white px-3 py-1.5 rounded-lg border border-gray-100 whitespace-nowrap shrink-0">
+                          <span className="text-xs font-bold text-blue-600 bg-white px-3 py-1.5 rounded-lg border border-border whitespace-nowrap shrink-0">
                             {displayDate}
                           </span>
                                                 <span className="text-sm font-bold text-gray-800 truncate">{gymName}</span>
                                             </div>
                                             <div className="flex items-center gap-1.5 shrink-0">
-                                                <button onClick={() => handleEditClick(dateKey, gymName)} className="p-2 bg-white rounded-xl border border-gray-100 text-gray-400 hover:text-blue-600 transition-colors"><Edit className="w-3.5 h-3.5" /></button>
-                                                <button onClick={() => handleDelete(dateKey)} className="p-2 bg-white rounded-xl border border-gray-100 text-gray-400 hover:text-rose-500 transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
+                                                <button onClick={() => handleEditClick(dateKey, gymName)} className="p-2 bg-white rounded-xl border border-border text-gray-400 hover:text-blue-600 transition-colors"><Edit className="w-3.5 h-3.5" /></button>
+                                                <button onClick={() => handleDelete(dateKey)} className="p-2 bg-white rounded-xl border border-border text-gray-400 hover:text-rose-500 transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
                                             </div>
                                         </div>
                                     )}

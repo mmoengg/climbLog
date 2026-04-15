@@ -196,7 +196,7 @@ const RecordView = ({ db, appId, user, sessions, uniqueGyms }) => {
     return (
         <div className="space-y-6 animate-in fade-in pb-10">
 
-            <section className="bg-white p-5 rounded-3xl border border-gray-100">
+            <section className="bg-white p-5 rounded-lg border border-border">
                 <h3 className="font-bold text-gray-800 text-sm flex items-center gap-2 uppercase mb-4">
                     <Trophy className="w-5 h-5 text-amber-500" /> Best Records per Gym
                 </h3>
@@ -214,7 +214,7 @@ const RecordView = ({ db, appId, user, sessions, uniqueGyms }) => {
                 )}
             </section>
 
-            <section className="bg-white p-5 rounded-3xl border border-gray-100">
+            <section className="bg-white p-5 rounded-lg border border-border">
                 <div className="flex justify-between items-center mb-4">
                     <h3 className="font-bold text-gray-800 text-sm flex items-center gap-2 uppercase">
                         <TrendingUp className="w-5 h-5 text-blue-600" /> Growth Chart
@@ -230,7 +230,7 @@ const RecordView = ({ db, appId, user, sessions, uniqueGyms }) => {
                     )}
                 </div>
 
-                <div className="w-full bg-gray-50 rounded-2xl p-4 overflow-x-auto scrollbar-hide border border-gray-100/50">
+                <div className="w-full bg-gray-50 rounded-2xl p-4 overflow-x-auto scrollbar-hide border border-border/50">
                     {chartData ? (
                         <svg width="320" height="190" className="mx-auto overflow-visible">
                             {chartData.levels.map((lv, i) => {
@@ -264,7 +264,7 @@ const RecordView = ({ db, appId, user, sessions, uniqueGyms }) => {
             </section>
 
             {/* 새 하이라이트 추가 폼 */}
-            <section className="bg-white p-5 rounded-3xl border-2 border-dashed border-blue-200 transition-all hover:bg-blue-50/50">
+            <section className="bg-white p-5 rounded-lg border-2 border-dashed border-blue-200 transition-all hover:bg-blue-50/50">
                 <button onClick={() => setShowAddForm(!showAddForm)} className="w-full flex items-center justify-between font-bold text-blue-600 uppercase text-sm">
                     <span className="flex items-center gap-2"><Plus className="w-5 h-5" /> 새 하이라이트 추가하기</span>
                     <ChevronDown className={`transition-transform duration-300 ${showAddForm ? 'rotate-180' : ''}`} />
@@ -309,7 +309,7 @@ const RecordView = ({ db, appId, user, sessions, uniqueGyms }) => {
 
                     return isEditing ? (
                         // 수정 모드 UI
-                        <div key={s.id} className="bg-blue-50/30 p-5 rounded-3xl border border-blue-200 space-y-3 animate-in fade-in">
+                        <div key={s.id} className="bg-blue-50/30 p-5 rounded-lg border border-blue-200 space-y-3 animate-in fade-in">
                             <div className="flex justify-between items-center border-b border-blue-100 pb-2 mb-2">
                                 <span className="text-xs font-bold text-blue-600 uppercase">기록 수정하기</span>
                             </div>
@@ -335,7 +335,7 @@ const RecordView = ({ db, appId, user, sessions, uniqueGyms }) => {
                         </div>
                     ) : (
                         // 일반 보기 모드 UI
-                        <div key={s.id} className="bg-white p-5 rounded-3xl border border-gray-100 space-y-3 relative group">
+                        <div key={s.id} className="bg-white p-5 rounded-lg border border-border space-y-3 relative group">
                             <div className="flex justify-between items-start">
                                 <div>
                                     <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">{s.date}</span>
@@ -347,8 +347,8 @@ const RecordView = ({ db, appId, user, sessions, uniqueGyms }) => {
                             </span>
                                     {/* 우측 상단 수정/삭제 버튼 */}
                                     <div className="flex flex-col gap-1 ml-1 opacity-50 hover:opacity-100 transition-opacity">
-                                        <button onClick={() => handleEditClick(s)} className="p-1.5 bg-gray-50 rounded-lg border border-gray-100 text-gray-400 hover:text-blue-600 transition-colors"><Edit className="w-3 h-3" /></button>
-                                        <button onClick={() => handleDelete(s.id)} className="p-1.5 bg-gray-50 rounded-lg border border-gray-100 text-gray-400 hover:text-rose-500 transition-colors"><Trash2 className="w-3 h-3" /></button>
+                                        <button onClick={() => handleEditClick(s)} className="p-1.5 bg-gray-50 rounded-lg border border-border text-gray-400 hover:text-blue-600 transition-colors"><Edit className="w-3 h-3" /></button>
+                                        <button onClick={() => handleDelete(s.id)} className="p-1.5 bg-gray-50 rounded-lg border border-border text-gray-400 hover:text-rose-500 transition-colors"><Trash2 className="w-3 h-3" /></button>
                                     </div>
                                 </div>
                             </div>
@@ -371,7 +371,7 @@ const RecordView = ({ db, appId, user, sessions, uniqueGyms }) => {
                     );
                 })}
                 {sessions.length === 0 && (
-                    <div className="w-full p-8 bg-gray-50 rounded-3xl border border-gray-100 text-center shadow-inner">
+                    <div className="w-full p-8 bg-gray-50 rounded-lg border border-border text-center shadow-inner">
                         <PenSquare className="w-6 h-6 text-gray-300 mx-auto mb-2" />
                         <p className="text-xs font-bold text-gray-400 uppercase">기록된 하이라이트가 없습니다</p>
                     </div>

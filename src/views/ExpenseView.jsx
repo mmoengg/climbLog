@@ -70,30 +70,30 @@ const ExpenseView = ({  db, appId, user, expenses }) => {
 
     return (
         <div className="space-y-4 animate-in fade-in pb-10">
-            <section className="bg-white p-5 rounded-lg border border-neutral-100">
-                <h3 className="text-text text-sm font-semibold flex items-center gap-1.5 mb-4">
-                    <PieChart className="w-5 h-5 text-secondary" /> Expense Summary
-                </h3>
+            {/*<section className="bg-white p-5 rounded-lg border border-neutral-100">*/}
+                {/*<h3 className="text-text text-sm font-semibold flex items-center gap-1.5 mb-4">*/}
+                {/*    <PieChart className="w-5 h-5 text-secondary" /> Expense Summary*/}
+                {/*</h3>*/}
                 <div className="grid grid-cols-2 gap-3">
-                    <div className="p-2.5 rounded-sm border border-border flex justify-between">
+                    <div className="p-2.5 rounded-sm border border-border flex justify-between bg-white">
                         <span className="text-xs text-text">오늘</span>
                         <span className="text-xs font-bold text-text">{stats.daily.toLocaleString()}원</span>
                     </div>
-                    <div className="p-2.5 rounded-sm border border-border flex justify-between">
+                    <div className="p-2.5 rounded-sm border border-border flex justify-between bg-white">
                         <span className="text-xs text-text">이번 주</span>
                         <span className="text-xs font-bold text-text">{stats.weekly.toLocaleString()}원</span>
                     </div>
-                    <div className="p-2.5 rounded-sm border border-border flex justify-between">
+                    <div className="p-2.5 rounded-sm border border-border flex justify-between bg-white">
                         <span className="text-xs text-text">이번 달</span>
                         <span className="text-xs font-bold text-text">{stats.monthly.toLocaleString()}원</span>
                     </div>
-                        <div className="p-2.5 rounded-sm border border-border flex justify-between">
+                        <div className="p-2.5 rounded-sm border border-border flex justify-between bg-white">
 
                         <span className="text-xs text-text">합계</span>
                         <span className="text-xs font-bold text-secondary">{stats.total.toLocaleString()}원</span>
                     </div>
                 </div>
-            </section>
+            {/*</section>*/}
 
             <section className="bg-white p-2.5 flex flex-col items-center  rounded-lg border border-dashed border-border transition-all">
                 <button onClick={() => setShowAddForm(!showAddForm)} className={`w-full flex items-center justify-between text-text-500  ${showAddForm && 'mb-3'}`}>
@@ -142,7 +142,7 @@ const ExpenseView = ({  db, appId, user, expenses }) => {
                     </div>
                 ))}
                 {expenses.length === 0 && (
-                    <div className="w-full p-8 bg-gray-50 rounded-3xl border border-gray-100 text-center shadow-inner">
+                    <div className="w-full p-8 bg-gray-50 rounded-lg border border-border text-center shadow-inner">
                         <Receipt className="w-6 h-6 text-gray-300 mx-auto mb-2" />
                         <p className="text-xs text-text-500 uppercase">기록된 지출이 없습니다</p>
                     </div>
